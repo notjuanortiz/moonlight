@@ -15,6 +15,10 @@ import world.player.skill.smithing.smeltOre.Bar
 class SmeltOreAction(val plr: Player, val bar: Bar, var amount: Int) : ProducingAction(plr, true, 5) {
 
     companion object {
+
+        /**
+         * The animation.
+         */
         val ANIM = Animation(899)
     }
 
@@ -47,8 +51,10 @@ class SmeltOreAction(val plr: Player, val bar: Bar, var amount: Int) : Producing
             } else {
                 plr.smithing.addExperience(bar.exp)
             }
+
+            plr.animation(ANIM)
         } else {
-            plr.sendMessage("The ore is too impure to yield anything!")
+            plr.sendMessage("The ore is too impure and you fail to refine it.")
         }
         amount--
     }
