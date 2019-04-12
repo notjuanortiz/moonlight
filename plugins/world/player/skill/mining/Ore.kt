@@ -1,11 +1,31 @@
-// TODO Blocked until stationary entity system is complete
 package world.player.skill.mining
 
-/**
- *
- *
- * @author lare96 <http://github.com/lare96>
- */
+import api.predef.*
+
+enum class Ore(val itemId: Int, val level: Int, val mineTicks: Int, val respawnTicks: Int, val exp: Double) {
+    CLAY(-1, -1, -1, -1, 0.0),
+    ESSENCE(-1, 1, -1, -1, 0.0),
+    TIN(-1, -1, -1, -1, 0.0);
+
+    /**
+     * The name used when mining ore.
+     */
+    val miningName = itemDef(itemId).name
+
+    /**
+     * The name used when prospecting ore.
+     */
+    val prospectingName = itemDef(itemId).name.replace("ore", "").trim()
+
+    companion object {
+
+        /**
+         * An immutable copy of [values].
+         */
+        val ALL: List<Ore> = values().toList()
+    }
+}
+
 // TODO check if swapping objects can be done simply (id's 450/451)
 /*enum class Ore(val rocks: IntArray,
                val emptyRocks: IntArray,
@@ -71,136 +91,4 @@ package world.player.skill.mining
 
     /** The experience gained from mining this rock. */
     private int experience;
-
-    /** A map of rocks mapped to another map of their ore objects. */
-    private static Map<Rock, HashMap<Integer, OreObject>> rockMap = new HashMap<Rock, HashMap<Integer, OreObject>>();
-
-    /** A map of object id's mapped to their respective rock instances. */
-    private static Map<Integer, Rock> objectMap = new HashMap<Integer, Rock>();
-
-    /** Load the data into the map. */
-    static
-    {
-        for (Rock rock : Rock.values()) {
-        rockMap.put(rock, new HashMap < Integer, OreObject > ());
-
-        for (OreObject ore : rock.getOre()) {
-        rockMap.get(rock).put(ore.getRock(), ore);
-        objectMap.put(ore.getRock(), rock);
-    }
-    }
-    }
-
-    /**
-     * Create a new {@link Rock}.
-     *
-     * @param ore
-     *        all of the rocks and their empty rock replacements.
-     * @param level
-     *        the level needed to mine this type of rock.
-     * @param itemId
-     *        the item id of the rock.
-     * @param respawnTime
-     *        the time it takes for this rock to respawn.
-     * @param mineRate
-     *        the rate at which this rock can be mined.
-     * @param experience
-     *        the experience gained from mining this rock.
-     */
-    private Rock(OreObject[] ore, int level, int itemId, int respawnTime, int mineRate, int experience)
-    {
-        this.ore = ore;
-        this.level = level;
-        this.itemId = itemId;
-        this.respawnTime = respawnTime;
-        this.mineRate = mineRate;
-        this.experience = experience;
-    }
-
-    /**
-     * Gets all of the rocks and their empty rock replacements.
-     *
-     * @return the ore.
-     */
-    public OreObject[] getOre()
-    {
-        return ore;
-    }
-
-    /**
-     * Gets the level needed to mine this type of rock.
-     *
-     * @return the level.
-     */
-    public int getLevel()
-    {
-        return level;
-    }
-
-    /**
-     * Gets the item id of the rock.
-     *
-     * @return the item id.
-     */
-    public int getItemId()
-    {
-        return itemId;
-    }
-
-    /**
-     * Gets the time it takes for this rock to respawn.
-     *
-     * @return the respawn time.
-     */
-    public int getRespawnTime()
-    {
-        return respawnTime;
-    }
-
-    /**
-     * Gets the rate at which this rock can be mined.
-     *
-     * @return the speed.
-     */
-    public int getMineRate()
-    {
-        return mineRate;
-    }
-
-    /**
-     * Gets the experience gained from mining this rock.
-     *
-     * @return the experience.
-     */
-    public int getExperience()
-    {
-        return experience;
-    }
-
-    /**
-     * Gets the correct {@link OreObject} for the specified {@link Rock} and
-     * object id.
-     *
-     * @param rock
-     *        the rock to get the ore object for.
-     * @param objectId
-     *        the object id to get the ore object for.
-     * @return the correct object ore.
-     */
-    public static OreObject getOre(Rock rock, int objectId)
-    {
-        return rockMap.get(rock).get(objectId);
-    }
-
-    /**
-     * Gets the correct rock instance for the specified object id.
-     *
-     * @param objectId
-     *        the specified object id.
-     * @return the correct rock instance.
-     */
-    public static Rock getRock(int objectId)
-    {
-        return objectMap.get(objectId);
-    }
-}*/
+*/

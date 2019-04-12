@@ -78,7 +78,7 @@ public final class AreaManager implements Iterable<Area> {
             } else if (!containsOld && containsNew) {
                 // Old position isn't in this area, new position is.
                 area.enter(player);
-            } else if (containsOld && containsNew) {
+            } else if (containsOld) {
                 // Old position is in this area, so is the new one.
                 area.move(player);
             }
