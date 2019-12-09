@@ -52,6 +52,10 @@ import static com.google.common.base.Preconditions.checkState;
 
 /**
  * A model representing a player-controlled mob.
+ * <p>
+ * Any external behaviour based on any fields of this class should be delegated
+ * to an {@link PlayerListener}.
+ * </p>
  *
  * @author lare96 <http://github.org/lare96>
  */
@@ -309,7 +313,7 @@ public final class Player extends Mob {
     /**
      * The run energy percentage.
      */
-    private double runEnergy;
+    double runEnergy;
 
     /**
      * The combined weight of the {@link #inventory} and {@link #equipment}.
@@ -319,7 +323,7 @@ public final class Player extends Mob {
     /**
      * Creates a new {@link Player}.
      *
-     * @param context The context instance.
+     * @param context     The context instance.
      * @param credentials The credentials.
      */
     public Player(LunaContext context, PlayerCredentials credentials) {
@@ -521,7 +525,7 @@ public final class Player extends Mob {
      * can boost performance when invoked repetitively.
      *
      * @param msg The message to send.
-     * @param id The widget identifier.
+     * @param id  The widget identifier.
      */
     public void sendText(Object msg, int id) {
         // Retrieve the text that's already on the interface.
