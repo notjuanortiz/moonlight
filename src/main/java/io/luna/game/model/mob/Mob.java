@@ -139,7 +139,7 @@ public abstract class Mob extends Entity {
      * @param context The context instance.
      */
     public Mob(LunaContext context, EntityType type) {
-        super(context, type);
+        this(context, null, type);
     }
 
     @Override

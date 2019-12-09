@@ -65,14 +65,8 @@ public abstract class Entity {
      * @param type The type.
      */
     public Entity(LunaContext context, Position position, EntityType type) {
-        this.context = context;
+        this(context, type);
         this.position = position;
-        this.type = type;
-
-        plugins = context.getPlugins();
-        service = context.getGame();
-        world = context.getWorld();
-
     }
 
     /**
