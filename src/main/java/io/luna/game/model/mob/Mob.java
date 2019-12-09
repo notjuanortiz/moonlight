@@ -135,7 +135,7 @@ public abstract class Mob extends Entity {
      */
     public Mob(LunaContext context, Position position, EntityType type) {
         super(context, position, type);
-        this.listeners = new HashSet<MobListener>();
+        this.listeners = new HashSet<>();
     }
 
     /**
