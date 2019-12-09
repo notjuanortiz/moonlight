@@ -14,8 +14,10 @@ import io.luna.game.model.mob.block.UpdateFlagSet;
 import io.luna.game.model.mob.block.UpdateFlagSet.UpdateFlag;
 import io.luna.game.task.Task;
 
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
@@ -124,6 +126,8 @@ public abstract class Mob extends Entity {
      */
     private Npc npcInstance;
 
+    private volatile Set<MobListener> listeners;
+
     /**
      * Creates a new {@link Mob}.
      *
@@ -131,6 +135,7 @@ public abstract class Mob extends Entity {
      */
     public Mob(LunaContext context, Position position, EntityType type) {
         super(context, position, type);
+        this.listeners = new HashSet<MobListener>();
     }
 
     /**
@@ -426,6 +431,10 @@ public abstract class Mob extends Entity {
         flags.flag(UpdateFlag.SECONDARY_HIT);
     }
 
+    final void notifyListeners() {
+        this.listeners.forEach(listener -> listener.update(this));
+    }
+
     /**
      * @return The mob list index.
      */
@@ -656,5 +665,13 @@ public abstract class Mob extends Entity {
      */
     public int getZ() {
         return position.getZ();
+    }
+
+    public boolean addListener(MobListener listener) {
+        return listeners.add(listener);
+    }
+
+    public boolean removeListener(MobListener listener) {
+        return listeners.remove(listener);
     }
 }
