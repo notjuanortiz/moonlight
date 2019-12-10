@@ -313,7 +313,7 @@ public final class Player extends Mob {
     /**
      * The run energy percentage.
      */
-    double runEnergy;
+    private double runEnergy;
 
     /**
      * The combined weight of the {@link #inventory} and {@link #equipment}.
@@ -329,6 +329,8 @@ public final class Player extends Mob {
     public Player(LunaContext context, PlayerCredentials credentials) {
         super(context, EntityType.PLAYER);
         this.credentials = credentials;
+
+        this.addListener(new PlayerListenerRunEnergy());
     }
 
     @Override
@@ -630,7 +632,9 @@ public final class Player extends Mob {
      * Sets the run energy percentage.
      *
      * @param newRunEnergy The value to set to.
+     * @deprecated Use {@link #setRunEnergy(double)}
      */
+    @Deprecated
     public void setRunEnergy(double newRunEnergy, boolean update) {
         if (newRunEnergy > 100.0) {
             newRunEnergy = 100.0;
@@ -644,19 +648,24 @@ public final class Player extends Mob {
         }
     }
 
+    public void setRunEnergy(double runEnergy) {
+        if (runEnergy > 100.0) {
+            runEnergy = 100.0;
+        }
+        if (runEnergy < 0) {
+            runEnergy = 0;
+        }
+        this.runEnergy = runEnergy;
+        notifyListeners();
+    }
+
     /**
      * Increases the current run energy level.
      *
      * @param amount The value to change by.
      */
     public void increaseRunEnergy(double amount) {
-        double newEnergy = runEnergy + amount;
-        if (newEnergy > 100.0) {
-            newEnergy = 100.0;
-        } else if (newEnergy < 0.0) {
-            newEnergy = 0.0;
-        }
-        setRunEnergy(newEnergy, true);
+        setRunEnergy(this.runEnergy + amount);
     }
 
     /**

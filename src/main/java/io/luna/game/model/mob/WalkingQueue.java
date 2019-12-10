@@ -250,12 +250,12 @@ public final class WalkingQueue {
                 .pow(Math.E, 0.0027725887222397812376689284858327062723020005374410 * totalWeight);
         double newValue = player.getRunEnergy() - energyReduction;
         if (newValue <= 0.0) {
-            player.setRunEnergy(0.0, true);
+            player.setRunEnergy(0.0);
             player.setRunning(false);
             runningPath = false;
             return false;
         }
-        player.setRunEnergy(newValue, true);
+        player.setRunEnergy(newValue);
         return true;
     }
 
@@ -276,7 +276,7 @@ public final class WalkingQueue {
         double newValue = runEnergy + energyRestoration;
         newValue = Math.min(newValue, 100.0);
 
-        player.setRunEnergy(newValue, true);
+        player.setRunEnergy(newValue);
     }
 
     /**

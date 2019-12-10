@@ -126,7 +126,7 @@ public abstract class Mob extends Entity {
      */
     private Npc npcInstance;
 
-    private volatile Set<MobListener> listeners;
+    private final Set<MobListener> listeners;
 
     /**
      * Creates a new {@link Mob}.
