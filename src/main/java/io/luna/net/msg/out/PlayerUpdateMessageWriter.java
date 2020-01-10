@@ -2,7 +2,6 @@ package io.luna.net.msg.out;
 
 import io.luna.game.model.Direction;
 import io.luna.game.model.EntityState;
-import io.luna.game.model.Music;
 import io.luna.game.model.Position;
 import io.luna.game.model.chunk.ChunkManager;
 import io.luna.game.model.mob.Player;
@@ -44,13 +43,13 @@ public final class PlayerUpdateMessageWriter extends GameMessageWriter {
 
             handleMovement(player, msg);
 
-            Music m = Music.getSongForReqion(player.getPosition().getRegionPosition().getId());
-            if (m!=null) {
-                m.playSong(m, player);
-            } else {
-                LOGGER.info("No music for region: " + player.getPosition().getRegionPosition().getId());
-                Music.stopMusic(player);
-            }
+//            Song m = Song.getSongForReqion(player.getPosition().getRegionPosition().getId());
+//            if (m!=null) {
+//                m.playSong(m, player);
+//            } else {
+//                LOGGER.info("No music for region: " + player.getPosition().getRegionPosition().getId());
+//                Song.stopMusic(player);
+//            }
 
             blockSet.encode(player, blockMsg, UpdateState.UPDATE_SELF);
 

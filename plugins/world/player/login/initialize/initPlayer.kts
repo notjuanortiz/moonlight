@@ -8,7 +8,6 @@ import io.luna.game.model.mob.Player
 import io.luna.net.msg.out.AssignmentMessageWriter
 import io.luna.net.msg.out.SkillUpdateMessageWriter
 import io.luna.net.msg.out.UpdateRunEnergyMessageWriter
-import io.luna.game.model.Music
 import java.time.format.DateTimeFormatter
 
 /**
@@ -47,7 +46,7 @@ fun init(plr: Player) {
     plr.queue(AssignmentMessageWriter(true))
 
     plr.skills.forEach { plr.queue(SkillUpdateMessageWriter(it.id)) }
-    Music.updateMusicInterface(plr)
+    //Song.updateMusicInterface(plr)
 
     plr.sendMessage("Welcome to Luna.")
     if (Luna.settings().betaMode()) {
