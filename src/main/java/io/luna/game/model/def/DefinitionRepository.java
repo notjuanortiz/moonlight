@@ -30,7 +30,7 @@ public abstract class DefinitionRepository<T extends Definition> implements Iter
     /**
      * An implementation of {@link DefinitionRepository} that is backed internally by an array.
      */
-    static final class ArrayDefinitionRepository<T extends Definition> extends DefinitionRepository<T> {
+    public static final class ArrayDefinitionRepository<T extends Definition> extends DefinitionRepository<T> {
 
         /**
          * An array of definitions.
