@@ -2,7 +2,6 @@ package io.luna.game.audio;
 
 import com.google.gson.annotations.SerializedName;
 import io.luna.game.model.def.Definition;
-import io.luna.game.model.def.DefinitionRepository;
 
 import java.util.Arrays;
 import java.util.List;
@@ -14,18 +13,18 @@ import java.util.stream.Collectors;
 public class Song implements Definition {
 
     @SerializedName("song_name")
-    public String songName = "";
+    final String songName;
 
     @SerializedName("song_id")
-    public int songId = -1;
+    final int songId;
 
     @SerializedName("music_tab_id")
-    public int musicTabId = -1;
+    final int musicTabId;
 
     @SerializedName("music_button_id")
-    public int musicButtonId = -1;
+    final int musicButtonId;
 
-    public List<Integer> regions;
+    final List<Integer> regions;
 
     /**
      * Create a new Song metadata object.
@@ -55,6 +54,9 @@ public class Song implements Definition {
         return this.songId;
     }
 
+    /**
+     * This builder class is used mostly for testing.
+     */
     public static class Builder {
         private String songName;
         private int songId;
@@ -97,6 +99,26 @@ public class Song implements Definition {
         public Song build() {
             return new Song(this.songName, this.songId, this.musicTabId, this.musicButtonId, this.regions);
         }
+    }
+
+    public String getSongName() {
+        return songName;
+    }
+
+    public int getSongId() {
+        return songId;
+    }
+
+    public int getMusicTabId() {
+        return musicTabId;
+    }
+
+    public int getMusicButtonId() {
+        return musicButtonId;
+    }
+
+    public List<Integer> getRegions() {
+        return regions;
     }
 //    /**
 //     * Attempts to find the proper song to play based on region ID
