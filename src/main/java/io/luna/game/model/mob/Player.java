@@ -5,6 +5,8 @@ import com.google.common.util.concurrent.ListenableFuture;
 import io.luna.Luna;
 import io.luna.LunaContext;
 import io.luna.game.action.Action;
+import io.luna.game.audio.Song;
+import io.luna.game.audio.SongController;
 import io.luna.game.event.impl.LoginEvent;
 import io.luna.game.event.impl.LogoutEvent;
 import io.luna.game.model.Direction;
@@ -29,8 +31,11 @@ import io.luna.net.LunaChannelFilter;
 import io.luna.net.client.GameClient;
 import io.luna.net.codec.ByteMessage;
 import io.luna.net.msg.GameMessageWriter;
+
+import io.luna.net.msg.out.ColorChangeMessageWriter;
 import io.luna.net.msg.out.GameChatboxMessageWriter;
 import io.luna.net.msg.out.LogoutMessageWriter;
+import io.luna.net.msg.out.MusicMessageWriter;
 import io.luna.net.msg.out.RegionChangeMessageWriter;
 import io.luna.net.msg.out.UpdateRunEnergyMessageWriter;
 import io.luna.net.msg.out.UpdateWeightMessageWriter;
@@ -38,6 +43,7 @@ import io.luna.net.msg.out.WidgetTextMessageWriter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.awt.Color;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -57,12 +63,6 @@ import static com.google.common.base.Preconditions.checkState;
  * @author lare96 <http://github.org/lare96>
  */
 public final class Player extends Mob {
-
-    /**
-     * Integer representing last song played, and Array of unlocked songs.
-     */
-    public int lastSong = -1;
-    public int[] unlockedSongs = new int[600];
 
     /**
      * An enum representing prayer icons.
@@ -157,6 +157,8 @@ public final class Player extends Mob {
      * The credentials.
      */
     private final PlayerCredentials credentials;
+
+    private final SongController songController;
 
     /**
      * The inventory.
@@ -327,6 +329,7 @@ public final class Player extends Mob {
     public Player(LunaContext context, PlayerCredentials credentials) {
         super(context, EntityType.PLAYER);
         this.credentials = credentials;
+        this.songController = new SongController();
     }
 
     @Override
@@ -1133,5 +1136,26 @@ public final class Player extends Mob {
      */
     public void setDatabaseId(int databaseId) {
         this.databaseId = databaseId;
+    }
+
+    public void playSong(Song song) {
+        boolean songChanged = songController.play(song);
+
+        if (songChanged) {
+            this.queue(new MusicMessageWriter(song.getSongId()));
+            this.queue(new ColorChangeMessageWriter(song.getMusicTabId(), Color.GREEN));
+        }
+    }
+
+    public void stopMusic() {
+        boolean musicStopped = songController.stop();
+
+        if (musicStopped) {
+            this.queue(new MusicMessageWriter(-1));
+        }
+    }
+
+    public SongController getSongController() {
+        return songController;
     }
 }
