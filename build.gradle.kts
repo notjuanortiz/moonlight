@@ -53,14 +53,6 @@ java {
     targetCompatibility = JavaVersion.VERSION_11
 }
 
-sourceSets {
-    main {
-        withConvention(KotlinSourceSet::class) {
-            kotlin.srcDirs("plugins")
-        }
-    }
-}
-
 javafx {
     version = "11"
     modules("javafx.controls", "javafx.fxml", "javafx.swing")
