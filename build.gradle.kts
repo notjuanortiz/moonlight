@@ -12,8 +12,10 @@ plugins {
     id("org.openjfx.javafxplugin") version jfxVersion
 }
 
-repositories {
-    jcenter()
+allprojects {
+    repositories {
+        jcenter()
+    }
 }
 
 dependencies {
