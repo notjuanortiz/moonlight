@@ -12,7 +12,7 @@ import io.luna.util.ThreadUtils;
 import io.luna.util.parser.impl.BlacklistFileParser;
 import io.luna.util.parser.impl.EquipmentDefinitionFileParser;
 import io.luna.util.parser.impl.ItemDefinitionFileParser;
-import io.luna.util.parser.impl.MessageRepositoryFileParser;
+import io.luna.net.msg.GameMessageRepositoryFileParser;
 import io.luna.util.parser.impl.NpcCombatDefinitionFileParser;
 import io.luna.util.parser.impl.NpcDefinitionFileParser;
 import io.luna.util.parser.impl.ObjectDefinitionFileParser;
@@ -125,7 +125,7 @@ public final class LunaServer {
      **/
     private void initLaunchTasks() {
         AsyncExecutor executor = new AsyncExecutor(ThreadUtils.cpuCount(), "BackgroundLoaderThread");
-        executor.execute(new MessageRepositoryFileParser(messageRepository));
+        executor.execute(new GameMessageRepositoryFileParser(messageRepository));
         executor.execute(new EquipmentDefinitionFileParser());
         executor.execute(new ItemDefinitionFileParser());
         executor.execute(new NpcCombatDefinitionFileParser());

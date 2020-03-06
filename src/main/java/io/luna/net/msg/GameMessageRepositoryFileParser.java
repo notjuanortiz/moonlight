@@ -1,12 +1,9 @@
-package io.luna.util.parser.impl;
+package io.luna.net.msg;
 
 import com.google.common.collect.ImmutableList;
 import com.google.gson.JsonObject;
 import io.luna.game.event.Event;
 import io.luna.game.model.mob.Player;
-import io.luna.net.msg.GameMessage;
-import io.luna.net.msg.GameMessageReader;
-import io.luna.net.msg.GameMessageRepository;
 import io.luna.util.parser.AbstractJsonFileParser;
 
 import java.lang.reflect.Field;
@@ -16,7 +13,7 @@ import java.lang.reflect.Field;
  *
  * @author lare96 <http://github.org/lare96>
  */
-public final class MessageRepositoryFileParser extends AbstractJsonFileParser<GameMessageReader> {
+public final class GameMessageRepositoryFileParser extends AbstractJsonFileParser<GameMessageReader> {
 
     /**
      * A default implementation of a {@link GameMessageReader}. It does nothing.
@@ -40,11 +37,11 @@ public final class MessageRepositoryFileParser extends AbstractJsonFileParser<Ga
     private final GameMessageRepository repository;
 
     /**
-     * Creates a new {@link MessageRepositoryFileParser}.
+     * Creates a new {@link GameMessageRepositoryFileParser}.
      *
      * @param repository The message repository.
      */
-    public MessageRepositoryFileParser(GameMessageRepository repository) {
+    public GameMessageRepositoryFileParser(GameMessageRepository repository) {
         super("./data/io/message_repo.json");
         this.repository = repository;
     }
