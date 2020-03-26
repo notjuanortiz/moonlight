@@ -13,22 +13,12 @@ import static com.google.common.base.Preconditions.checkArgument;
  *
  * @author lare96 <http://github.org/lare96>
  */
-public final class Position {
+public final class Position extends Vector {
 
     /**
      * A {@link Range} of all height levels.
      */
     public static final Range<Integer> HEIGHT_LEVELS = Range.closed(0, 3);
-
-    /**
-     * The x coordinate.
-     */
-    private final int x;
-
-    /**
-     * The y coordinate.
-     */
-    private final int y;
 
     /**
      * The z coordinate.
@@ -50,12 +40,10 @@ public final class Position {
      * @throws IllegalArgumentException If z is not in the range [0-3], inclusively.
      */
     public Position(int x, int y, int z) {
+        super(x,y);
         checkArgument(x >= 0, "x < 0");
         checkArgument(y >= 0, "y < 0");
         checkArgument(z >= 0 && z <= 3, "z < 0 || z > 3");
-
-        this.x = x;
-        this.y = y;
         this.z = z;
     }
 

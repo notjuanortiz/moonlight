@@ -1,31 +1,20 @@
 package io.luna.game.model.chunk;
 
-import com.google.common.base.MoreObjects;
 import io.luna.game.model.Position;
+import io.luna.game.model.Vector;
 
-import java.util.Objects;
 
 /**
  * A model representing the coordinates of a Chunk (8x8 tiles) on the Runescape map.
  *
  * @author lare96 <http://github.com/lare96>
  */
-public final class ChunkPosition {
+public final class ChunkPosition extends Vector {
 
     /**
      * The chunk length and width.
      */
     public static final int SIZE = 8;
-
-    /**
-     * The center x coordinate of this region.
-     */
-    private final int x;
-
-    /**
-     * The center y coordinate of this region.
-     */
-    private final int y;
 
     /**
      * Creates a new {@link ChunkPosition}.
@@ -43,18 +32,7 @@ public final class ChunkPosition {
      * @param y The center y coordinate of this region.
      */
     private ChunkPosition(int x, int y) {
-        this.x = x;
-        this.y = y;
-    }
-
-    @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(this).add("x", x).add("y", y).toString();
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(x, y);
+        super(x, y);
     }
 
     @Override
@@ -128,19 +106,5 @@ public final class ChunkPosition {
      */
     public int getLocalY(Position position) {
         return position.getY() % ChunkPosition.SIZE;
-    }
-
-    /**
-     * @return The top-left x coordinate.
-     */
-    public int getX() {
-        return x;
-    }
-
-    /**
-     * @return The top-left center y coordinate.
-     */
-    public int getY() {
-        return y;
     }
 }

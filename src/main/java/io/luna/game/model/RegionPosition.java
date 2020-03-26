@@ -7,22 +7,12 @@ import com.google.common.base.MoreObjects;
  *
  * @author lare96 <http://github.com/lare96>
  */
-public final class RegionPosition {
+public final class RegionPosition extends Vector {
 
     /**
      * The length and width.
      */
     public static final int SIZE = 64;
-
-    /**
-     * The center x coordinate.
-     */
-    private final int x;
-
-    /**
-     * The center y coordinate.
-     */
-    private final int y;
 
     /**
      * The identifier.
@@ -45,8 +35,7 @@ public final class RegionPosition {
      * @param y The center y coordinate.
      */
     private RegionPosition(int x, int y) {
-        this.x = x;
-        this.y = y;
+        super(x, y);
         id = (x * 256) + y;
     }
 
@@ -90,20 +79,6 @@ public final class RegionPosition {
      */
     public int getLocalY(Position position) {
         return position.getY() % SIZE;
-    }
-
-    /**
-     * @return The center x coordinate.
-     */
-    public int getX() {
-        return x;
-    }
-
-    /**
-     * @return The center y coordinate.
-     */
-    public int getY() {
-        return y;
     }
 
     /**
