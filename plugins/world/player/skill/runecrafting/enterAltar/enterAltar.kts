@@ -1,8 +1,8 @@
 package world.player.skill.runecrafting.enterAltar
 
 import api.predef.*
-import io.luna.game.event.impl.ItemOnObjectEvent
-import io.luna.game.event.impl.ObjectClickEvent.ObjectFirstClickEvent
+import io.luna.game.events.ItemOnObjectEvent
+import io.luna.game.events.ObjectClickEvent.ObjectFirstClickEvent
 import io.luna.game.model.item.Equipment
 import io.luna.game.model.mob.Animation
 import io.luna.game.model.mob.Player

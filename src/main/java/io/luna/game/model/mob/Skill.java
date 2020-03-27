@@ -4,7 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Range;
 import io.luna.Luna;
-import io.luna.game.event.impl.SkillChangeEvent;
+import io.luna.game.events.SkillChangeEvent;
 import io.luna.game.plugin.PluginManager;
 
 import java.util.function.Function;

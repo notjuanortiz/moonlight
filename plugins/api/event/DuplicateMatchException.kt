@@ -1,6 +1,6 @@
 package api.event
 
-import io.luna.game.event.Event
+import io.luna.event.Event
 import javax.script.ScriptException
 import kotlin.reflect.KClass
 

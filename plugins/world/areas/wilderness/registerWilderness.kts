@@ -1,7 +1,6 @@
 package world.areas.wilderness
 
 import api.predef.*
-import io.luna.game.event.impl.ServerLaunchEvent
 
 /**
  * Register miscellaneous wilderness areas here.

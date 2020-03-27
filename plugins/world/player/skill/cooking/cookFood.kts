@@ -1,7 +1,7 @@
 package world.player.skill.cooking
 
 import api.predef.*
-import io.luna.game.event.impl.ItemOnObjectEvent
+import io.luna.game.events.ItemOnObjectEvent
 import io.luna.game.model.mob.Player
 import io.luna.game.model.mob.inter.AmountInputInterface
 

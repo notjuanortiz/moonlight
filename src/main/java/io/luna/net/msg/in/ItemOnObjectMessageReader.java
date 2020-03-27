@@ -1,8 +1,8 @@
 package io.luna.net.msg.in;
 
 import io.luna.game.action.InteractionAction;
-import io.luna.game.event.Event;
-import io.luna.game.event.impl.ItemOnObjectEvent;
+import io.luna.event.Event;
+import io.luna.game.events.ItemOnObjectEvent;
 import io.luna.game.model.Position;
 import io.luna.game.model.def.ItemDefinition;
 import io.luna.game.model.def.ObjectDefinition;

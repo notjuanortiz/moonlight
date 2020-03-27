@@ -1,7 +1,7 @@
 package world.player.item.trading.request
 
 import api.predef.*
-import io.luna.game.event.impl.PlayerClickEvent.PlayerFourthClickEvent
+import io.luna.game.events.PlayerClickEvent.PlayerFourthClickEvent
 import io.luna.game.model.mob.Player
 
 /**

@@ -1,6 +1,6 @@
 package io.luna.net.msg.in;
 
-import io.luna.game.event.Event;
+import io.luna.event.Event;
 import io.luna.game.model.mob.Player;
 import io.luna.game.model.mob.block.UpdateFlagSet.UpdateFlag;
 import io.luna.net.msg.GameMessage;

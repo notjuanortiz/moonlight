@@ -1,8 +1,7 @@
 package world.player.command.searchItem
 
 import api.predef.*
-import io.luna.game.event.impl.WidgetItemClickEvent
-import io.luna.game.event.impl.WidgetItemClickEvent.*
+import io.luna.game.events.WidgetItemClickEvent.*
 import io.luna.game.model.item.Item
 import io.luna.game.model.mob.Player
 import io.luna.game.model.mob.inter.AmountInputInterface

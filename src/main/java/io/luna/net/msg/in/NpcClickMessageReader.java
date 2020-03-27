@@ -1,13 +1,13 @@
 package io.luna.net.msg.in;
 
 import io.luna.game.action.InteractionAction;
-import io.luna.game.event.Event;
-import io.luna.game.event.impl.NpcClickEvent;
-import io.luna.game.event.impl.NpcClickEvent.NpcFifthClickEvent;
-import io.luna.game.event.impl.NpcClickEvent.NpcFirstClickEvent;
-import io.luna.game.event.impl.NpcClickEvent.NpcFourthClickEvent;
-import io.luna.game.event.impl.NpcClickEvent.NpcSecondClickEvent;
-import io.luna.game.event.impl.NpcClickEvent.NpcThirdClickEvent;
+import io.luna.event.Event;
+import io.luna.game.events.NpcClickEvent;
+import io.luna.game.events.NpcClickEvent.NpcFifthClickEvent;
+import io.luna.game.events.NpcClickEvent.NpcFirstClickEvent;
+import io.luna.game.events.NpcClickEvent.NpcFourthClickEvent;
+import io.luna.game.events.NpcClickEvent.NpcSecondClickEvent;
+import io.luna.game.events.NpcClickEvent.NpcThirdClickEvent;
 import io.luna.game.model.World;
 import io.luna.game.model.mob.Npc;
 import io.luna.game.model.mob.Player;

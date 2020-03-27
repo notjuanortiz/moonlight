@@ -1,7 +1,7 @@
 package io.luna.net.msg.in;
 
-import io.luna.game.event.Event;
-import io.luna.game.event.impl.EquipItemEvent;
+import io.luna.event.Event;
+import io.luna.game.events.EquipItemEvent;
 import io.luna.game.model.item.Inventory;
 import io.luna.game.model.mob.Player;
 import io.luna.net.codec.ValueType;

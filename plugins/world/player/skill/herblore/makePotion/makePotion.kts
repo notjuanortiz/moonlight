@@ -1,7 +1,7 @@
 package world.player.skill.herblore.makePotion
 
 import api.predef.*
-import io.luna.game.event.impl.ItemOnItemEvent
+import io.luna.game.events.ItemOnItemEvent
 import io.luna.game.model.mob.Player
 import io.luna.game.model.mob.dialogue.MakeItemDialogueInterface
 

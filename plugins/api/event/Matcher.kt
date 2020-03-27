@@ -1,19 +1,19 @@
 package api.event
 
 import api.predef.*
-import io.luna.game.event.Event
-import io.luna.game.event.EventMatcher
-import io.luna.game.event.EventMatcherListener
-import io.luna.game.event.impl.ButtonClickEvent
-import io.luna.game.event.impl.CommandEvent
-import io.luna.game.event.impl.ItemClickEvent
-import io.luna.game.event.impl.ItemClickEvent.*
-import io.luna.game.event.impl.ItemOnItemEvent
-import io.luna.game.event.impl.ItemOnObjectEvent
-import io.luna.game.event.impl.NpcClickEvent
-import io.luna.game.event.impl.NpcClickEvent.*
-import io.luna.game.event.impl.ObjectClickEvent
-import io.luna.game.event.impl.ObjectClickEvent.*
+import io.luna.event.Event
+import io.luna.event.EventMatcher
+import io.luna.event.EventMatcherListener
+import io.luna.game.events.ButtonClickEvent
+import io.luna.game.events.CommandEvent
+import io.luna.game.events.ItemClickEvent
+import io.luna.game.events.ItemClickEvent.*
+import io.luna.game.events.ItemOnItemEvent
+import io.luna.game.events.ItemOnObjectEvent
+import io.luna.game.events.NpcClickEvent
+import io.luna.game.events.NpcClickEvent.*
+import io.luna.game.events.ObjectClickEvent
+import io.luna.game.events.ObjectClickEvent.*
 import kotlin.reflect.KClass
 
 /**

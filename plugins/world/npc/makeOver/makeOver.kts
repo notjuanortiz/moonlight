@@ -1,7 +1,6 @@
 package world.npc.makeOver
 
 import api.predef.*
-import io.luna.game.event.impl.ServerLaunchEvent
 import io.luna.game.model.mob.PlayerAppearance
 
 /**

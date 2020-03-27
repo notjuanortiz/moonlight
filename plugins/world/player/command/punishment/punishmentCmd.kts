@@ -2,7 +2,7 @@ package world.player.command.punishment
 
 import api.predef.*
 import api.punishment.PunishmentHandler
-import io.luna.game.event.impl.CommandEvent
+import io.luna.game.events.CommandEvent
 import world.player.command.cmd
 import world.player.command.getPlayer
 import java.time.LocalDateTime

@@ -1,10 +1,10 @@
 package world.player.privateChat
 
 import api.predef.*
-import io.luna.game.event.impl.LoginEvent
-import io.luna.game.event.impl.LogoutEvent
-import io.luna.game.event.impl.PrivateChatListChangeEvent
-import io.luna.game.event.impl.PrivateChatListChangeEvent.ChangeType.*
+import io.luna.game.events.LoginEvent
+import io.luna.game.events.LogoutEvent
+import io.luna.game.events.PrivateChatListChangeEvent
+import io.luna.game.events.PrivateChatListChangeEvent.ChangeType.*
 import io.luna.game.model.mob.Player
 import io.luna.net.msg.out.FriendsListStatusMessageWriter
 import io.luna.net.msg.out.UpdateFriendsListMessageWriter

@@ -1,11 +1,11 @@
 package io.luna.net.msg.in;
 
-import io.luna.game.event.Event;
-import io.luna.game.event.impl.WidgetItemClickEvent.WidgetItemFifthClickEvent;
-import io.luna.game.event.impl.WidgetItemClickEvent.WidgetItemFirstClickEvent;
-import io.luna.game.event.impl.WidgetItemClickEvent.WidgetItemFourthClickEvent;
-import io.luna.game.event.impl.WidgetItemClickEvent.WidgetItemSecondClickEvent;
-import io.luna.game.event.impl.WidgetItemClickEvent.WidgetItemThirdClickEvent;
+import io.luna.event.Event;
+import io.luna.game.events.WidgetItemClickEvent.WidgetItemFifthClickEvent;
+import io.luna.game.events.WidgetItemClickEvent.WidgetItemFirstClickEvent;
+import io.luna.game.events.WidgetItemClickEvent.WidgetItemFourthClickEvent;
+import io.luna.game.events.WidgetItemClickEvent.WidgetItemSecondClickEvent;
+import io.luna.game.events.WidgetItemClickEvent.WidgetItemThirdClickEvent;
 import io.luna.game.model.mob.Player;
 import io.luna.net.codec.ByteMessage;
 import io.luna.net.codec.ByteOrder;

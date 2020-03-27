@@ -1,8 +1,8 @@
 package io.luna.net.msg.in;
 
 import io.luna.game.action.InteractionAction;
-import io.luna.game.event.Event;
-import io.luna.game.event.impl.CastOnPlayerEvent;
+import io.luna.event.Event;
+import io.luna.game.events.CastOnPlayerEvent;
 import io.luna.game.model.mob.MobList;
 import io.luna.game.model.mob.Player;
 import io.luna.net.codec.ByteOrder;

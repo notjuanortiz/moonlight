@@ -1,7 +1,7 @@
 package world.player.death.dropItems
 
 import api.predef.*
-import io.luna.game.event.impl.PlayerDeathEvent
+import io.luna.game.events.PlayerDeathEvent
 import io.luna.game.model.EntityType
 import io.luna.game.model.item.Item
 import io.luna.game.model.item.ItemContainer

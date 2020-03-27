@@ -2,7 +2,7 @@ package world.player.command
 
 import api.event.Matcher
 import api.predef.*
-import io.luna.game.event.impl.CommandEvent
+import io.luna.game.events.CommandEvent
 import io.luna.game.model.mob.Player
 import io.luna.game.model.mob.PlayerRights
 

@@ -1,8 +1,8 @@
 package io.luna.net.msg.in;
 
 import io.luna.LunaContext;
-import io.luna.game.event.Event;
-import io.luna.game.event.impl.DropItemEvent;
+import io.luna.event.Event;
+import io.luna.game.events.DropItemEvent;
 import io.luna.game.model.def.ItemDefinition;
 import io.luna.game.model.item.GroundItem;
 import io.luna.game.model.item.Item;

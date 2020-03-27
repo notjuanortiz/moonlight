@@ -1,7 +1,7 @@
 package world.player.skill.woodcutting.searchNest
 
 import api.predef.*
-import io.luna.game.event.impl.ItemClickEvent.ItemFirstClickEvent
+import io.luna.game.events.ItemClickEvent.ItemFirstClickEvent
 import io.luna.game.model.mob.Player
 
 fun searchNest(plr: Player, nest: Nest) {

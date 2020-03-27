@@ -1,9 +1,9 @@
 package io.luna.net.msg.in;
 
-import io.luna.game.event.Event;
-import io.luna.game.event.impl.PrivateChatEvent;
-import io.luna.game.event.impl.PrivateChatListChangeEvent;
-import io.luna.game.event.impl.PrivateChatListChangeEvent.ChangeType;
+import io.luna.event.Event;
+import io.luna.game.events.PrivateChatEvent;
+import io.luna.game.events.PrivateChatListChangeEvent;
+import io.luna.game.events.PrivateChatListChangeEvent.ChangeType;
 import io.luna.game.model.mob.Player;
 import io.luna.net.codec.ByteMessage;
 import io.luna.net.msg.GameMessage;

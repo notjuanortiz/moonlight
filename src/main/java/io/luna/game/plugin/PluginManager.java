@@ -1,9 +1,9 @@
 package io.luna.game.plugin;
 
 import io.luna.LunaContext;
-import io.luna.game.event.Event;
-import io.luna.game.event.EventListenerPipeline;
-import io.luna.game.event.EventListenerPipelineSet;
+import io.luna.event.Event;
+import io.luna.event.EventListenerPipeline;
+import io.luna.event.EventListenerPipelineSet;
 
 /**
  * A model that acts as a bridge between interpreted Kotlin code and compiled Java code.

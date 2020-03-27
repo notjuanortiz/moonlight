@@ -2,8 +2,8 @@
 package world.player.skill.runecrafting.equipTiara
 
 import api.predef.*
-import io.luna.game.event.impl.EquipmentChangeEvent
-import io.luna.game.event.impl.LoginEvent
+import io.luna.game.events.EquipmentChangeEvent
+import io.luna.game.events.LoginEvent
 import io.luna.game.model.item.Equipment
 import io.luna.game.model.item.Item
 import io.luna.game.model.mob.Player

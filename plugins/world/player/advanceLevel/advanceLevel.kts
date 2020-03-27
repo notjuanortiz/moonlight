@@ -1,12 +1,10 @@
 package world.player.advanceLevel
 
 import api.predef.*
-import io.luna.game.event.impl.SkillChangeEvent
 import io.luna.game.model.mob.Graphic
 import io.luna.game.model.mob.Player
 import io.luna.game.model.mob.Skill
 import io.luna.game.model.mob.block.UpdateFlagSet.UpdateFlag
-import io.luna.net.msg.out.SkillUpdateMessageWriter
 
 /**
  * Graphic played when a player advances a level.

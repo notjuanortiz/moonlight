@@ -3,7 +3,7 @@ package world.player.login.init
 import api.predef.*
 import api.punishment.PunishmentHandler
 import io.luna.Luna
-import io.luna.game.event.impl.LoginEvent
+import io.luna.game.events.LoginEvent
 import io.luna.game.model.mob.Player
 import io.luna.net.msg.out.AssignmentMessageWriter
 import io.luna.net.msg.out.SkillUpdateMessageWriter

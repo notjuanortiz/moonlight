@@ -1,7 +1,7 @@
 package api.predef
 
-import io.luna.game.event.EventListener
-import io.luna.game.event.EventMatcherListener
+import io.luna.event.EventListener
+import io.luna.event.EventMatcherListener
 import io.luna.game.model.EntityType
 import io.luna.game.model.item.Equipment
 import io.luna.game.model.item.Item

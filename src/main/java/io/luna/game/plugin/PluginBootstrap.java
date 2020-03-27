@@ -4,9 +4,9 @@ import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassInfo;
 import io.github.classgraph.ScanResult;
 import io.luna.LunaContext;
-import io.luna.game.event.EventListener;
-import io.luna.game.event.EventListenerPipelineSet;
-import io.luna.game.event.EventMatcherListener;
+import io.luna.event.EventListener;
+import io.luna.event.EventListenerPipelineSet;
+import io.luna.event.EventMatcherListener;
 import kotlin.script.templates.standard.ScriptTemplateWithArgs;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -83,6 +83,7 @@ public final class PluginBootstrap {
 
         // Search classpath for compiled scripts.
         try (ScanResult result = new ClassGraph().enableClassInfo().disableJarScanning().scan()) {
+
             for (ClassInfo script : result.getSubclasses("kotlin.script.templates.standard.ScriptTemplateWithArgs")) {
                 if (script.getSimpleName().equals("Build_plugin")) {
                     buildScripts.add(script);

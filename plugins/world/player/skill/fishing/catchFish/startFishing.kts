@@ -1,9 +1,9 @@
 package world.player.skill.fishing.catchFish
 
 import api.predef.*
-import io.luna.game.event.impl.NpcClickEvent
-import io.luna.game.event.impl.NpcClickEvent.NpcFirstClickEvent
-import io.luna.game.event.impl.NpcClickEvent.NpcSecondClickEvent
+import io.luna.game.events.NpcClickEvent
+import io.luna.game.events.NpcClickEvent.NpcFirstClickEvent
+import io.luna.game.events.NpcClickEvent.NpcSecondClickEvent
 import world.player.skill.fishing.FishAction
 import world.player.skill.fishing.Tool
 

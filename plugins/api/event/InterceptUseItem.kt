@@ -1,7 +1,7 @@
 package api.event
 
-import io.luna.game.event.impl.ItemOnItemEvent
-import io.luna.game.event.impl.ItemOnObjectEvent
+import io.luna.game.events.ItemOnItemEvent
+import io.luna.game.events.ItemOnObjectEvent
 
 /**
  * A model that intercepts [ItemOnItemEvent]s and [ItemOnObjectEvent]s.

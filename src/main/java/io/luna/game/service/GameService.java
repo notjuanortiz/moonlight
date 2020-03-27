@@ -6,7 +6,7 @@ import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.Service;
 import io.luna.LunaContext;
-import io.luna.game.event.impl.ServerLaunchEvent;
+import io.luna.game.events.ServerLaunchEvent;
 import io.luna.game.model.World;
 import io.luna.game.model.mob.Player;
 import io.luna.game.plugin.PluginManager;

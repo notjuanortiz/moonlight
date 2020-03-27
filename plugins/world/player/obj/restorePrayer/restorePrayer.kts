@@ -1,7 +1,7 @@
 package world.player.obj.restorePrayer
 
 import api.predef.*
-import io.luna.game.event.impl.ObjectClickEvent.ObjectFirstClickEvent
+import io.luna.game.events.ObjectClickEvent.ObjectFirstClickEvent
 import io.luna.game.model.mob.Animation
 import io.luna.game.model.mob.Player
 

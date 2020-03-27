@@ -1,7 +1,7 @@
 package world.player.obj.resource
 
 import api.predef.*
-import io.luna.game.event.impl.ItemOnObjectEvent
+import io.luna.game.events.ItemOnObjectEvent
 import io.luna.game.model.def.ObjectDefinition
 import io.luna.game.model.item.Item
 import io.luna.game.model.mob.Player

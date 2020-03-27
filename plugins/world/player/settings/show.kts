@@ -1,7 +1,7 @@
 package world.player.settings
 
 import api.predef.*
-import io.luna.game.event.impl.LoginEvent
+import io.luna.game.events.LoginEvent
 
 /**
  * Configure and show saved settings.

@@ -1,9 +1,9 @@
 package io.luna.game.plugin;
 
 import io.luna.LunaContext;
-import io.luna.game.event.EventListener;
-import io.luna.game.event.EventListenerPipelineSet;
-import io.luna.game.event.EventMatcherListener;
+import io.luna.event.EventListener;
+import io.luna.event.EventListenerPipelineSet;
+import io.luna.event.EventMatcherListener;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

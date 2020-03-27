@@ -1,7 +1,7 @@
 package io.luna.net.msg.in;
 
-import io.luna.game.event.Event;
-import io.luna.game.event.impl.RegionChangedEvent;
+import io.luna.event.Event;
+import io.luna.game.events.RegionChangedEvent;
 import io.luna.game.model.EntityType;
 import io.luna.game.model.Position;
 import io.luna.game.model.StationaryEntity;

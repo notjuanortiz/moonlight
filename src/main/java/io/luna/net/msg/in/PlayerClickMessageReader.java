@@ -1,7 +1,7 @@
 package io.luna.net.msg.in;
 
-import io.luna.game.event.Event;
-import io.luna.game.event.impl.PlayerClickEvent.PlayerFourthClickEvent;
+import io.luna.event.Event;
+import io.luna.game.events.PlayerClickEvent.PlayerFourthClickEvent;
 import io.luna.game.model.World;
 import io.luna.game.model.mob.Player;
 import io.luna.net.codec.ByteMessage;

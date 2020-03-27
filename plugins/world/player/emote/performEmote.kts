@@ -1,7 +1,6 @@
 package world.player.emote
 
 import api.predef.*
-import io.luna.game.event.impl.ButtonClickEvent
 import io.luna.game.model.mob.Animation
 import io.luna.game.model.mob.Player
 

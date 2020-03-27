@@ -1,11 +1,11 @@
 package io.luna.net.msg.in;
 
 import io.luna.game.action.InteractionAction;
-import io.luna.game.event.Event;
-import io.luna.game.event.impl.ObjectClickEvent;
-import io.luna.game.event.impl.ObjectClickEvent.ObjectFirstClickEvent;
-import io.luna.game.event.impl.ObjectClickEvent.ObjectSecondClickEvent;
-import io.luna.game.event.impl.ObjectClickEvent.ObjectThirdClickEvent;
+import io.luna.event.Event;
+import io.luna.game.events.ObjectClickEvent;
+import io.luna.game.events.ObjectClickEvent.ObjectFirstClickEvent;
+import io.luna.game.events.ObjectClickEvent.ObjectSecondClickEvent;
+import io.luna.game.events.ObjectClickEvent.ObjectThirdClickEvent;
 import io.luna.game.model.Position;
 import io.luna.game.model.World;
 import io.luna.game.model.mob.Player;
@@ -17,11 +17,6 @@ import io.luna.net.codec.ByteOrder;
 import io.luna.net.codec.ValueType;
 import io.luna.net.msg.GameMessage;
 import io.luna.net.msg.GameMessageReader;
-import javafx.geometry.Pos;
-
-import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.checkState;
 

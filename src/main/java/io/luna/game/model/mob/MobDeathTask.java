@@ -2,8 +2,8 @@ package io.luna.game.model.mob;
 
 import io.luna.Luna;
 import io.luna.LunaContext;
-import io.luna.game.event.impl.NpcDeathEvent;
-import io.luna.game.event.impl.PlayerDeathEvent;
+import io.luna.game.events.NpcDeathEvent;
+import io.luna.game.events.PlayerDeathEvent;
 import io.luna.game.model.EntityType;
 import io.luna.game.model.World;
 import io.luna.game.model.def.NpcCombatDefinition;

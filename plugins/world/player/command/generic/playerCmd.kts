@@ -4,7 +4,7 @@ import api.event.Matcher
 import api.inter.QuestJournalInterface
 import api.predef.*
 import com.google.common.collect.HashMultimap
-import io.luna.game.event.impl.CommandEvent
+import io.luna.game.events.CommandEvent
 import io.luna.game.model.mob.Player
 import io.luna.game.model.mob.PlayerRights
 import io.luna.game.model.mob.inter.NameInputInterface

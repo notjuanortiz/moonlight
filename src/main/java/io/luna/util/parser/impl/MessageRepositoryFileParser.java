@@ -2,7 +2,7 @@ package io.luna.util.parser.impl;
 
 import com.google.common.collect.ImmutableList;
 import com.google.gson.JsonObject;
-import io.luna.game.event.Event;
+import io.luna.event.Event;
 import io.luna.game.model.mob.Player;
 import io.luna.net.msg.GameMessage;
 import io.luna.net.msg.GameMessageReader;
