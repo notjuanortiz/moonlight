@@ -1,6 +1,7 @@
 package world.player.skill.fishing.fishingSpot
 
 import api.predef.*
+import io.luna.game.events.ServerLaunchEvent
 
 /**
  * A list of fishing spots, where all moving fishing spots should be spawned.

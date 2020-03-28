@@ -1,6 +1,7 @@
 package world.player.item.equipment
 
 import api.predef.*
+import io.luna.game.events.EquipItemEvent
 import io.luna.game.events.WidgetItemClickEvent.WidgetItemFirstClickEvent
 import io.luna.game.model.mob.Player
 
