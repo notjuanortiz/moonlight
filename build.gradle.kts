@@ -1,4 +1,3 @@
-
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
@@ -12,13 +11,19 @@ plugins {
     id("org.openjfx.javafxplugin") version jfxVersion
 }
 
-repositories {
-    jcenter()
+allprojects {
+    group = "luna"
+    version = "1.0"
+
+    repositories {
+        jcenter()
+    }
 }
 
 val junitVersion: String by project
 
 dependencies {
+    implementation(project("game"))
     implementation("com.google.code.gson:gson:2.8.5")
     implementation("org.apache.logging.log4j:log4j-core:2.14.0")
     implementation("org.apache.logging.log4j:log4j-api:2.14.0")
@@ -42,9 +47,6 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter-params:$junitVersion")
     testImplementation("org.junit.jupiter:junit-jupiter-engine:$junitVersion")
 }
-
-group = "luna"
-version = "1.0"
 
 application {
     mainClassName = "io.luna.Luna"
