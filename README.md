@@ -1,23 +1,29 @@
-# Moonlight | [![Build Status](https://travis-ci.org/luna-rs/luna.svg?branch=master)](https://travis-ci.org/notjuanortiz.moonlight) [![Discord chat](https://img.shields.io/discord/510259198605525007.svg)](https://discord.gg/udCqykV) [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/lare96/luna/master/LICENSE.txt)
+# Luna | [![Build Status](https://travis-ci.org/luna-rs/luna.svg?branch=master)](https://travis-ci.org/luna-rs/luna) [![Discord chat](https://img.shields.io/discord/510259198605525007.svg)](https://discord.gg/udCqykV) [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/lare96/luna/master/LICENSE.txt)
+Luna is a Runescape emulator that aims to correct all of the fundamental issues accumulated over the various releases of it's predecessor [Asteria](https://github.com/lare96/asteria-3.0).
 
-The Moonlight Framework is an open source framework for building old-school Runescape emulators.
+Some of the sweetness within Luna
+- high performing and scalable code <b>where it matters most</b>
+- lightweight abstraction models that avoid [featuritis](https://en.wikipedia.org/wiki/Feature_creep)  
+- effective management of the host computer's resources 
+- flexible, event-based Kotlin plugin system for game content
+- highly documented code
 
-Moonlight is a "heavily" modified fork of [Luna](https://github.com/luna-rs/luna) with a modern twist.
 
 # Goals
-- Secure and resilient server-client communication
-- Plug-and-play revision support
-- Support for data access systems such as RDBMS, NoSQL, as well as local file storage for servers of any size.
-- Extensible support for access-control. Making custom rules for development teams and staff has never been easier.
+Currently, the Runescape private server scene is plagued with somewhat of a dilemma. One half of servers are lightweight, easy to understand, but perform poorly; while the other half perform very well, but contain a lot of bloat and overcomplicated code.
 
-# Non-goals
-- This project will not include any combat-related data such as weapon attributes, equipment attributes, and/or damage(s) dealt using those attributes.
-- This project will not include experience gains for any stat, although it may provide support for those operations.
-- This project will not include multi-revision support.
-- This project will not include custom content such as minigames, bosses, or maps that do not appear in earlier revisions.
+The goal of Luna (and its predecessor, Asteria) is to rectify this by being fast and scalable, while still being <b>relatively</b> lightweight and easy to understand.
+
 
 # Getting started
-Unfortunately there is still a ton of work to be done before this project is usable but, until then feel free to join our [Discord](https://discord.gg/waiting-room). 
+Luna is currently unstable and therefore not ready to be used in a production environment. The first stable pre-release will be [v0.5](https://github.com/luna-rs/luna/milestone/3), which is planned for sometime in February, 2019.
 
-# Special thanks to
-- The team behind the [Luna](https://github.com/luna-rs/luna) project, for providing critical components and guidance.
+An official client can be found [here](https://gitlab.com/lare96/luna-client), along with the cache. To learn more about how to get started with Luna please visit the [wiki](https://github.com/luna-rs/luna/wiki).
+
+For more help, inquiries, or just to dicuss the state of the project please join our [Discord server](https://discord.gg/udCqykV).
+
+
+# Acknowledgements
+Much of the inspiration for various features within Luna came from
+- the [Apollo project](https://github.com/apollo-rsps/apollo)
+- many discussions with a friend, [Ryley Kimmel](https://github.com/ryleykimmel/)
