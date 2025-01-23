@@ -8,7 +8,7 @@ import io.luna.game.model.mob.Mob;
  * include burying bones and identifying herbs.
  *
  * @param <T> The mob that this Action is dedicated to.
- * @author lare96 <http://github.com/lare96>
+ * @author lare96 
  */
 public abstract class ThrottledAction<T extends Mob> extends Action<T> {
 
@@ -20,7 +20,7 @@ public abstract class ThrottledAction<T extends Mob> extends Action<T> {
     /**
      * The throttle delay.
      */
-    private int delay;
+    private final int delay;
 
     /**
      * Creates a new {@link ThrottledAction}.

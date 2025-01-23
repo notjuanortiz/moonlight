@@ -1,37 +1,68 @@
 package io.luna.game.model.chunk;
 
-import io.luna.game.model.Entity;
-import io.luna.game.model.EntityType;
+import com.google.common.base.MoreObjects;
+import io.luna.game.model.Location;
 import io.luna.game.model.Position;
 
-import java.util.Iterator;
-import java.util.Set;
-import java.util.stream.Stream;
+import java.util.Objects;
+
+import static com.google.common.base.Preconditions.checkState;
 
 /**
- * A model containing entities and updates for those entities within a chunk.
+ * A {@link Location} made up of 8x8 tiles on the Runescape map.
  *
- * @author lare96 <http://github.com/lare96>
+ * @author lare96
  */
-public final class Chunk {
+public final class Chunk implements Location {
 
     /**
-     * This chunk's position.
+     * The dimensions of a chunk.
      */
-    private final ChunkPosition position;
+    public static final int SIZE = 8;
 
     /**
-     * The repository of entities.
+     * The {@code x} coordinate of this chunk.
      */
-    private final ChunkRepository repository = new ChunkRepository();
+    private final int x;
 
     /**
-     * Creates a new {@link ChunkPosition}.
+     * The {@code y} coordinate of this chunk.
+     */
+    private final int y;
+
+    /**
+     * Creates a new {@link Chunk}.
      *
-     * @param position The chunk position.
+     * @param position The position to get the chunk coordinates of.
      */
-    Chunk(ChunkPosition position) {
-        this.position = position;
+    public Chunk(Position position) {
+        this(position.getBottomLeftChunkX(), position.getBottomLeftChunkY());
+    }
+
+    /**
+     * Creates a new {@link Chunk}.
+     *
+     * @param x The {@code x} coordinate of this chunk.
+     * @param y The {@code y} coordinate of this chunk.
+     */
+    public Chunk(int x, int y) {
+        this.x = x;
+        this.y = y;
+    }
+
+    @Override
+    public boolean contains(Position position) {
+        return position.getChunk().equals(this);
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this).add("x", x).add("y", y).toString();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(x, y);
     }
 
     @Override
@@ -41,70 +72,72 @@ public final class Chunk {
         }
         if (obj instanceof Chunk) {
             Chunk other = (Chunk) obj;
-            return position.equals(other.position);
+            return x == other.x && y == other.y;
         }
         return false;
     }
 
-    @Override
-    public int hashCode() {
-        return position.hashCode();
-    }
-
     /**
-     * Forwards to {@link ChunkRepository#add(Entity)}.
-     */
-    public void add(Entity entity) {
-        repository.add(entity);
-    }
-
-    /**
-     * Forwards to {@link ChunkRepository#remove(Entity)}.
-     */
-    public void remove(Entity entity) {
-        repository.remove(entity);
-    }
-
-    /**
-     * Forwards to {@link ChunkRepository#setOf(EntityType)}.
-     */
-    public <E extends Entity> Set<E> getAll(EntityType type) {
-        return repository.setOf(type);
-    }
-
-    /**
-     * Returns a stream over {@code type} entities in this chunk.
+     * Returns the packed deltas of {@code position} from the base position of this chunk. Used by
+     * {@link ChunkUpdatableMessage} types to place entities on the map.
      *
-     * @param type The entity type.
-     * @param <E> The type.
-     * @return The stream.
+     * @param position The position.
+     * @return The offset.
      */
-    public <E extends Entity> Stream<E> stream(EntityType type) {
-        return (Stream<E>) getAll(type).stream();
+    public int offset(Position position) {
+        int deltaX = position.getX() - getAbsX();
+        int deltaY = position.getY() - getAbsY();
+        checkState(deltaX >= 0 && deltaX < Chunk.SIZE, "Invalid X delta [" + deltaX + "].");
+        checkState(deltaY >= 0 && deltaY < Chunk.SIZE, "Invalid Y delta [" + deltaY + "].");
+        return deltaX << 4 | deltaY;
     }
 
     /**
-     * Returns an iterator over {@code type} entities in this chunk.
+     * Returns a new {@link Chunk} translated by {@code addX} and {@code addY}.
      *
-     * @param type The entity type.
-     * @param <E> The type.
-     * @return The iterator.
+     * @param addX The x translation.
+     * @param addY The y translation.
+     * @return The new chunk position.
      */
-    public <E extends Entity> Iterator<E> iterator(EntityType type) {
-        return (Iterator<E>) getAll(type).iterator();
+    public Chunk translate(int addX, int addY) {
+        if (addX == 0 && addY == 0) {
+            return this;
+        }
+        return new Chunk(x + addX, y + addY);
     }
 
     /**
-     * @return The position.
+     * @return The absolute {@code x} coordinate.
      */
-    public ChunkPosition getPosition() {
-        return position;
+    public int getAbsX() {
+        return SIZE * (x + 6);
     }
 
     /**
-     * @return This chunk's absolute position.
+     * @return The absolute {@code y} coordinate.
      */
-    public Position getAbsolutePosition() {
-        return new Position(position.getAbsX(), position.getAbsY());
+    public int getAbsY() {
+        return SIZE * (y + 6);
+    }
+
+    /**
+     * @return The {@code x} coordinate.
+     */
+    public int getX() {
+        return x;
+    }
+
+    /**
+     * @return The {@code y} coordinate.
+     */
+    public int getY() {
+        return y;
+    }
+
+    /**
+     * @return The absolute position of this chunk.
+     */
+    public Position getAbsPosition() {
+        return new Position(getAbsX(), getAbsY());
     }
 }

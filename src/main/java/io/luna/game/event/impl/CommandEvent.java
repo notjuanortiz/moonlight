@@ -6,9 +6,14 @@ import io.luna.util.StringUtils;
 /**
  * An event sent when a player activates a command.
  *
- * @author lare96 <http://github.org/lare96>
+ * @author lare96
  */
-public final class CommandEvent extends PlayerEvent {
+public final class CommandEvent extends PlayerEvent implements ControllableEvent {
+
+    /**
+     * The complete command string that was entered.
+     */
+    private final String completeString;
 
     /**
      * The command name.
@@ -27,8 +32,9 @@ public final class CommandEvent extends PlayerEvent {
      * @param name The command name.
      * @param args The command arguments.
      */
-    public CommandEvent(Player player, String name, String[] args) {
+    public CommandEvent(Player player, String completeString, String name, String[] args) {
         super(player);
+        this.completeString = completeString;
         this.name = name;
         this.args = args;
     }
@@ -38,8 +44,8 @@ public final class CommandEvent extends PlayerEvent {
      *
      * @param name The command name.
      */
-    public CommandEvent(Player player, String name) {
-        this(player, name, StringUtils.EMPTY_ARRAY);
+    public CommandEvent(Player player, String completeString, String name) {
+        this(player, completeString, name, StringUtils.EMPTY_ARRAY);
     }
 
     /**
@@ -57,18 +63,6 @@ public final class CommandEvent extends PlayerEvent {
     }
 
     /**
-     * Replaces a character of the argument at {@code index}.
-     *
-     * @param index The index.
-     * @param oldChar The character to replace.
-     * @param newChar The character to replace with.
-     * @return The argument, with the characters replaced.
-     */
-    public String replace(int index, char oldChar, char newChar) {
-        return args[index].replace(oldChar, newChar);
-    }
-
-    /**
      * Gets the entire string after the argument {@code index}.
      *
      * @param index The index to start at.
@@ -76,13 +70,20 @@ public final class CommandEvent extends PlayerEvent {
      */
     public String getInputFrom(int index) {
         StringBuilder sb = new StringBuilder();
-        for(int slot = 0; slot < args.length; slot++) {
-            if(slot >= index) {
+        for (int slot = 0; slot < args.length; slot++) {
+            if (slot >= index) {
                 sb.append(args[slot]).append(" ");
             }
         }
         sb.setLength(sb.length() - 1);
         return sb.toString();
+    }
+
+    /**
+     * @return The complete command string that was entered.
+     */
+    public String getCompleteString() {
+        return completeString;
     }
 
     /**

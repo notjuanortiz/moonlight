@@ -10,10 +10,15 @@ import io.luna.game.model.Position;
 import io.luna.game.model.mob.MobDeathTask.NpcDeathTask;
 import io.luna.game.model.mob.MobDeathTask.PlayerDeathTask;
 import io.luna.game.model.mob.attr.AttributeMap;
+import io.luna.game.model.mob.block.Animation;
+import io.luna.game.model.mob.block.Graphic;
+import io.luna.game.model.mob.block.Hit;
 import io.luna.game.model.mob.block.UpdateFlagSet;
 import io.luna.game.model.mob.block.UpdateFlagSet.UpdateFlag;
 import io.luna.game.task.Task;
+import world.player.Sounds;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
 
@@ -24,14 +29,13 @@ import static io.luna.game.model.mob.Skill.HITPOINTS;
 /**
  * A model representing an entity able to move around.
  *
- * @author lare96 <http://github.org/lare96>
+ * @author lare96
  */
 public abstract class Mob extends Entity {
-
+// todo documentation
     /**
      * The attribute map.
      */
-    // TODO for players only...
     protected final AttributeMap attributes = new AttributeMap();
 
     /**
@@ -68,6 +72,11 @@ public abstract class Mob extends Entity {
      * The current running direction.
      */
     private Direction runningDirection = Direction.NONE;
+
+    /**
+     * The last movement direction.
+     */
+    private Direction lastDirection = Direction.SOUTH;
 
     /**
      * The current animation.
@@ -123,6 +132,11 @@ public abstract class Mob extends Entity {
      * The npc instance. May be null.
      */
     private Npc npcInstance;
+
+    /**
+     * If this mob is locked.
+     */
+    private boolean locked;
 
     /**
      * Creates a new {@link Mob}.
@@ -196,7 +210,8 @@ public abstract class Mob extends Entity {
      *
      * @param amount The new health.
      */
-    public final void setHealth(int amount) {
+    public final void setHealth(int amount) { // TODO rename into dealdamage or something, hp.getLevel() portion is
+        // confusing when you just want to modify the skill itself
         var hp = skill(HITPOINTS);
         if (hp.getLevel() > 0) {
             hp.setLevel(amount);
@@ -233,6 +248,36 @@ public abstract class Mob extends Entity {
     }
 
     /**
+     * Action-locks this mob for the specified amount of ticks.
+     */
+    public void lock(int ticks) {
+        if (!locked) {
+            locked = true;
+            world.schedule(new Task(ticks) {
+                @Override
+                protected void execute() {
+                    locked = false;
+                    cancel();
+                }
+            });
+        }
+    }
+
+    /**
+     * Action-locks this mob completely. Please use with caution as
+     */
+    public void lock() {
+        locked = true;
+    }
+
+    /**
+     * Undoes the action-lock on this mob.
+     */
+    public void unlock() {
+        locked = false;
+    }
+
+    /**
      * Damages the mob once.
      */
     public final void damage(Hit hit) {
@@ -242,6 +287,23 @@ public abstract class Mob extends Entity {
             primaryHit(hit);
         }
         addHealth(-hit.getDamage());
+        if (this instanceof Player) {
+            if (hit.getDamage() > 0) {
+                int healthPercent = getHealth() <= 0 ? 100 : (int) Math.floor((double) hit.getDamage() / getHealth());
+                if (healthPercent > 20) {
+                    asPlr().playSound(Sounds.TAKE_DAMAGE_4);
+                } else if (healthPercent > 10) {
+                    asPlr().playRandomSound(Sounds.TAKE_DAMAGE_3, Sounds.TAKE_DAMAGE_4);
+                } else if (healthPercent > 5) {
+                    asPlr().playRandomSound(Sounds.TAKE_DAMAGE, Sounds.TAKE_DAMAGE_2);
+                } else {
+                    asPlr().playSound(Sounds.TAKE_DAMAGE);
+                }
+            } else {
+                // TODO determine if player is wearing armor/has shield then play different sound
+                asPlr().playSound(Sounds.UNARMED_BLOCK);
+            }
+        }
     }
 
     /**
@@ -288,7 +350,7 @@ public abstract class Mob extends Entity {
      *
      * @param position The position to teleport to.
      */
-    public final void teleport(Position position) {
+    public final void move(Position position) {
         setPosition(position);
         walking.clear();
         actions.interrupt();
@@ -360,8 +422,8 @@ public abstract class Mob extends Entity {
      *
      * @param message The message to force.
      */
-    public final void forceChat(String message) {
-        forcedChat = Optional.of(message);
+    public final void forceChat(Object message) {
+        forcedChat = Optional.of(Objects.toString(message));
         flags.flag(UpdateFlag.FORCED_CHAT);
     }
 
@@ -394,7 +456,7 @@ public abstract class Mob extends Entity {
             face(entity.getPosition());
         }
         interactingWith = Optional.ofNullable(entity);
-    }
+    } // TODO Reloading region resets interaction for both this and position
 
     /**
      * Resets the current {@link Entity} we are interacting with.
@@ -457,6 +519,33 @@ public abstract class Mob extends Entity {
         primaryHit = Optional.empty();
         secondaryHit = Optional.empty();
         flags.clear();
+    }
+
+    /**
+     * Determines if this mob can interact with {@code target} based on their position and size.
+     *
+     * @param target The target.
+     * @return {@code true} if the target can be interacted with.
+     */
+    public boolean canInteractWith(Entity target, int distance) {
+        Position targetPosition = target.getPosition();
+        if (position.isWithinDistance(targetPosition, distance)) {
+            return true;
+        } else {
+            int sizeX = target.sizeX();
+            int sizeY = target.sizeY();
+            for (int x = 0; x < sizeX; x++) {
+                for (int y = 0; y < sizeY; y++) { // TODO start from -size?
+                    Position interactable = targetPosition.translate(x, y);
+                    // TODO check for fences etc. in the way
+                    // TODO check if what is blocking the player IS the object we're trying to interact with. is that possible?
+                    if (position.isWithinDistance(interactable, distance)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     /**
@@ -553,6 +642,14 @@ public abstract class Mob extends Entity {
         this.runningDirection = runningDirection;
     }
 
+    public Direction getLastDirection() {
+        return lastDirection;
+    }
+
+    public void setLastDirection(Direction lastDirection) {
+        this.lastDirection = lastDirection;
+    }
+
     /**
      * @return The current animation.
      */
@@ -635,6 +732,13 @@ public abstract class Mob extends Entity {
      */
     public ActionManager getActions() {
         return actions;
+    }
+
+    /**
+     * @return {@code true} if this mob is action-locked.
+     */
+    public boolean isLocked() {
+        return locked;
     }
 
     /**

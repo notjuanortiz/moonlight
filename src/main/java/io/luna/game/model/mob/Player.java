@@ -1,44 +1,65 @@
 package io.luna.game.model.mob;
 
 import com.google.common.base.MoreObjects;
+import com.google.common.base.Stopwatch;
 import com.google.common.util.concurrent.ListenableFuture;
 import io.luna.Luna;
 import io.luna.LunaContext;
 import io.luna.game.action.Action;
 import io.luna.game.event.impl.LoginEvent;
 import io.luna.game.event.impl.LogoutEvent;
-import io.luna.game.model.Direction;
+import io.luna.game.event.impl.RegionChangedEvent;
+import io.luna.game.model.Entity;
 import io.luna.game.model.EntityState;
 import io.luna.game.model.EntityType;
 import io.luna.game.model.Position;
+import io.luna.game.model.Region;
+import io.luna.game.model.chunk.ChunkUpdatableView;
 import io.luna.game.model.item.Bank;
 import io.luna.game.model.item.Equipment;
 import io.luna.game.model.item.GroundItem;
 import io.luna.game.model.item.Inventory;
 import io.luna.game.model.item.Item;
+import io.luna.game.model.map.DynamicMap;
+import io.luna.game.model.mob.block.Chat;
+import io.luna.game.model.mob.block.ForcedMovement;
 import io.luna.game.model.mob.block.UpdateFlagSet.UpdateFlag;
+import io.luna.game.model.mob.bot.Bot;
+import io.luna.game.model.mob.controller.ControllerManager;
 import io.luna.game.model.mob.dialogue.DialogueQueue;
 import io.luna.game.model.mob.dialogue.DialogueQueueBuilder;
 import io.luna.game.model.mob.inter.AbstractInterfaceSet;
 import io.luna.game.model.mob.inter.GameTabSet;
 import io.luna.game.model.mob.persistence.PlayerData;
+import io.luna.game.model.mob.varp.PersistentVarp;
+import io.luna.game.model.mob.varp.PersistentVarpManager;
+import io.luna.game.model.mob.varp.Varbit;
+import io.luna.game.model.mob.varp.Varp;
 import io.luna.game.model.object.GameObject;
 import io.luna.game.service.LogoutService;
+import io.luna.game.service.LogoutService.LogoutRequest;
 import io.luna.game.service.PersistenceService;
+import io.luna.game.task.Task;
 import io.luna.net.LunaChannelFilter;
 import io.luna.net.client.GameClient;
 import io.luna.net.codec.ByteMessage;
 import io.luna.net.msg.GameMessageWriter;
 import io.luna.net.msg.out.GameChatboxMessageWriter;
 import io.luna.net.msg.out.LogoutMessageWriter;
-import io.luna.net.msg.out.RegionChangeMessageWriter;
+import io.luna.net.msg.out.RegionMessageWriter;
+import io.luna.net.msg.out.SoundMessageWriter;
 import io.luna.net.msg.out.UpdateRunEnergyMessageWriter;
 import io.luna.net.msg.out.UpdateWeightMessageWriter;
+import io.luna.net.msg.out.VarpMessageWriter;
 import io.luna.net.msg.out.WidgetTextMessageWriter;
+import io.luna.util.RandomUtils;
+import io.luna.util.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import world.player.Messages;
+import world.player.Sounds;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -49,14 +70,12 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
 
-import static com.google.common.base.Preconditions.checkState;
-
 /**
  * A model representing a player-controlled mob.
  *
- * @author lare96 <http://github.org/lare96>
+ * @author lare96
  */
-public final class Player extends Mob {
+public class Player extends Mob {
 
     /**
      * An enum representing prayer icons.
@@ -64,7 +83,7 @@ public final class Player extends Mob {
     public enum PrayerIcon {
         NONE(-1),
         PROTECT_FROM_MELEE(0),
-        PROTECT_FROM_MISSILES(1),
+        PROTECT_FROM_MISSILES0(1),
         PROTECT_FROM_MAGIC(2),
         RETRIBUTION(3),
         SMITE(4),
@@ -95,7 +114,7 @@ public final class Player extends Mob {
     /**
      * An enum representing skull icons.
      */
-    public enum SkullIcon {
+    public enum SkullIcon { // TODO test/redo
         NONE(-1),
         WHITE(0),
         RED(1);
@@ -183,9 +202,9 @@ public final class Player extends Mob {
     private final Map<Integer, String> textCache = new HashMap<>();
 
     /**
-     * The settings.
+     * The music tab data.
      */
-    private PlayerSettings settings = new PlayerSettings();
+    private PlayerMusicTab musicTab = new PlayerMusicTab();
 
     /**
      * The cached update block.
@@ -211,11 +230,6 @@ public final class Player extends Mob {
      * If the region has changed.
      */
     private boolean regionChanged;
-
-    /**
-     * The running direction.
-     */
-    private Direction runningDirection = Direction.NONE;
 
     /**
      * The chat message.
@@ -285,12 +299,12 @@ public final class Player extends Mob {
     /**
      * When the player is unbanned.
      */
-    private LocalDateTime unbanDate;
+    private Instant unbanInstant;
 
     /**
      * When the player is unmuted.
      */
-    private LocalDateTime unmuteDate;
+    private Instant unmuteInstant;
 
     /**
      * The prepared save data.
@@ -313,6 +327,26 @@ public final class Player extends Mob {
     private double weight;
 
     /**
+     * The controller manager.
+     */
+    private final ControllerManager controllers = new ControllerManager(this);
+
+    /**
+     * The varp manager.
+     */
+    private final PersistentVarpManager varpManager = new PersistentVarpManager(this);
+
+    /**
+     * The timeout timer.
+     */
+    private final Stopwatch timeout = Stopwatch.createUnstarted();
+
+    /**
+     * The current dynamic map the player is in.
+     */
+    private DynamicMap dynamicMap;
+
+    /**
      * Creates a new {@link Player}.
      *
      * @param context The context instance.
@@ -324,7 +358,7 @@ public final class Player extends Mob {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public final boolean equals(Object obj) {
         if (this == obj) {
             return true;
         }
@@ -336,12 +370,22 @@ public final class Player extends Mob {
     }
 
     @Override
-    public int hashCode() {
+    public final int hashCode() {
         return Objects.hash(getUsernameHash());
     }
 
     @Override
-    public int size() {
+    public final int size() {
+        return 1;
+    }
+
+    @Override
+    public final int sizeX() {
+        return 1;
+    }
+
+    @Override
+    public final int sizeY() {
         return 1;
     }
 
@@ -350,12 +394,12 @@ public final class Player extends Mob {
         return MoreObjects.toStringHelper(this).
                 add("username", getUsername()).
                 add("index", getIndex()).
-                add("rights", rights).toString();
+                add("rights", rights).
+                add("state", state).toString();
     }
 
     @Override
     protected void onActive() {
-        world.getAreas().notifyLogin(this);
         teleporting = true;
         flags.flag(UpdateFlag.APPEARANCE);
         plugins.post(new LoginEvent(this));
@@ -364,8 +408,8 @@ public final class Player extends Mob {
     @Override
     protected void onInactive() {
         actions.interrupt();
+        world.getTasks().forEachAttachment(this, Task::cancel);
         world.getPlayerMap().remove(getUsername());
-        world.getAreas().notifyLogout(this);
         removeLocalObjects();
         interfaces.close();
         plugins.post(new LogoutEvent(this));
@@ -378,6 +422,7 @@ public final class Player extends Mob {
 
     @Override
     public void reset() {
+        regionChanged = false;
         teleporting = false;
         chat = Optional.empty();
         forcedMovement = Optional.empty();
@@ -413,8 +458,21 @@ public final class Player extends Mob {
     }
 
     @Override
-    protected void onPositionChange(Position oldPos) {
-        world.getAreas().notifyPositionChange(this, oldPos, position);
+    protected void onPositionChanged(Position oldPos) {
+        checkRegionChanged(oldPos);
+    }
+
+    /**
+     * Sends a {@link RegionChangedEvent} if the region ID has changed as a result of a position change.
+     *
+     * @param oldPos The old position.
+     */
+    private void checkRegionChanged(Position oldPos) {
+        Region oldRegion = oldPos.getRegion();
+        Region newRegion = position.getRegion();
+        if (!oldRegion.equals(newRegion)) { // TODO remove, useless
+            context.getPlugins().post(new RegionChangedEvent(this, oldRegion, newRegion));
+        }
     }
 
     /**
@@ -429,8 +487,9 @@ public final class Player extends Mob {
     /**
      * Prepares the save data to be serialized by a {@link LogoutService} worker.
      */
-    public void createSaveData() {
-        saveData = new PlayerData().save(this);
+    public PlayerData createSaveData() {
+        saveData = new PlayerData(getUsername()).save(this);
+        return saveData;
     }
 
     /**
@@ -442,11 +501,10 @@ public final class Player extends Mob {
             data.load(this);
         } else {
             // New player!
-            setPosition(Luna.settings().startingPosition());
-            rights = Luna.settings().betaMode() || LunaChannelFilter.WHITELIST.contains(client.getIpAddress()) ?
+            setPosition(Luna.settings().game().startingPosition());
+            rights = Luna.settings().game().betaMode() || LunaChannelFilter.WHITELIST.contains(client.getIpAddress()) ?
                     PlayerRights.DEVELOPER : PlayerRights.PLAYER;
         }
-        settings.setPlayer(this);
     }
 
     /**
@@ -456,7 +514,7 @@ public final class Player extends Mob {
         if (getState() == EntityState.ACTIVE) {
             setState(EntityState.INACTIVE);
             createSaveData();
-            world.getLogoutService().submit(getUsername(), this);
+            world.getLogoutService().submit(getUsername(), new LogoutRequest(this));
         }
     }
 
@@ -464,7 +522,7 @@ public final class Player extends Mob {
      * Unregisters all assigned local objects.
      */
     public void removeLocalObjects() {
-        if (localObjects.size() > 0) {
+        if (!localObjects.isEmpty()) {
             Iterator<GameObject> objectIterator = localObjects.iterator();
             while (objectIterator.hasNext()) {
                 world.getObjects().unregister(objectIterator.next());
@@ -484,10 +542,30 @@ public final class Player extends Mob {
             inventory.add(item);
         } else if (bank.hasSpaceFor(item)) {
             bank.add(item);
+            sendMessage(StringUtils.addArticle(item.getItemDef().getName()) + " has been deposited into your bank.");
         } else {
             world.getItems().register(new GroundItem(context, item.getId(), item.getAmount(),
-                    position, Optional.of(this)));
+                    position, ChunkUpdatableView.localView(this)));
+            sendMessage(StringUtils.addArticle(item.getItemDef().getName()) + " has been dropped on the floor under you.");
         }
+    }
+
+    /**
+     * Determines if this player has any item with {@code id} in the inventory, bank, equipped, or if it's dropped
+     * nearby on the floor and visible.
+     *
+     * @param id The item ID to check for.
+     */
+    public boolean hasItem(int id) {
+        if (inventory.contains(id) ||
+                bank.contains(id) ||
+                equipment.contains(id)) {
+            return true;
+        }
+        return world.getChunks().getViewableEntities(position, EntityType.ITEM).stream().anyMatch(it -> {
+            GroundItem groundItem = (GroundItem) it;
+            return groundItem.getId() == id && groundItem.getView().isViewableFor(this);
+        });
     }
 
     /**
@@ -496,7 +574,53 @@ public final class Player extends Mob {
      * @param msg The message to send.
      */
     public void sendMessage(Object msg) {
+        if (msg instanceof Messages) {
+            msg = ((Messages) msg).getText();
+        }
         queue(new GameChatboxMessageWriter(msg));
+    }
+
+    /**
+     * Shortcut to queue a new {@link VarpMessageWriter} packet for an arbitrary varp.
+     *
+     * @param varp The varp to send.
+     */
+    public void sendVarp(Varp varp) {
+        PersistentVarp persistentVarp = PersistentVarp.ALL.get(varp.getId());
+        if (persistentVarp != null) {
+            varpManager.setValue(persistentVarp, varp.getValue());
+        }
+        queue(new VarpMessageWriter(varp));
+    }
+
+    /**
+     * Shortcut to queue a new {@link VarpMessageWriter} packet for a persistent varp.
+     *
+     * @param persistentVarp The persistent varp id.
+     * @param value The new integer value to set.
+     */
+    public void sendVarp(PersistentVarp persistentVarp, int value) {
+        sendVarp(new Varp(persistentVarp.getClientId(), value));
+    }
+
+    /**
+     * Shortcut to queue a new {@link VarpMessageWriter} packet for a persistent varp.
+     *
+     * @param persistentVarp The persistent varp id.
+     * @param value The new boolean value to set.
+     */
+    public void sendVarp(PersistentVarp persistentVarp, boolean value) {
+        sendVarp(persistentVarp, value ? 1 : 0);
+    }
+
+    /**
+     * Shortcut to queue a new {@link VarpMessageWriter} packet for a varbit.
+     *
+     * @param varbit The varbit.
+     */
+    public void sendVarbit(Varbit varbit) {
+        Varp varp = varbit.toVarp();
+        sendVarp(varp);
     }
 
     /**
@@ -514,6 +638,30 @@ public final class Player extends Mob {
             // Only queue the packet if we're sending different text.
             queue(new WidgetTextMessageWriter(pending, id));
         }
+    }
+
+    /**
+     * Clears the {@link #textCache} for entry {@code id}.
+     *
+     * @param id The widget identifier.
+     */
+    public void clearText(int id) {
+        textCache.remove(id);
+    }
+
+    /**
+     * @return {@code true} if this player is a bot.
+     */
+    public boolean isBot() {
+        return this instanceof Bot;
+    }
+
+    /**
+     * @return This instance, cast to the {@link Bot} type. If this player is not a bot, {@link ClassCastException}
+     * will be thrown.
+     */
+    public Bot asBot() {
+        return (Bot) this;
     }
 
     /**
@@ -567,14 +715,32 @@ public final class Player extends Mob {
     }
 
     /**
-     * Sends a region update, if one is needed.
+     * Sends a region update if needed, and refreshes all {@link Entity} types that need to be displayed.
+     *
+     * @param oldPosition The player's old position before movement processing.
      */
-    public void sendRegionUpdate() {
+    public void sendRegionUpdate(Position oldPosition) {
+        boolean fullRefresh = false;
         if (lastRegion == null || needsRegionUpdate()) {
+           if (isInDynamicMap()) {
+                regionChanged = true;
+                lastRegion = position;
+                // comment ^ above out makes the player appear in a diff place????
+                // todo cache palette? or current dynamic map?>
+                // todo still need to update objects
+             // dynamicMap.sendUpdate(this);
+                return;
+            }
+
+            fullRefresh = true;
             regionChanged = true;
             lastRegion = position;
-            queue(new RegionChangeMessageWriter());
+            queue(new RegionMessageWriter(position));
         }
+        if (isTeleporting()) {
+            fullRefresh = true;
+        }
+        world.getChunks().sendUpdates(this, oldPosition, fullRefresh);
     }
 
     /**
@@ -585,8 +751,44 @@ public final class Player extends Mob {
     public boolean needsRegionUpdate() {
         int deltaX = position.getLocalX(lastRegion);
         int deltaY = position.getLocalY(lastRegion);
+        return deltaX <= 15 || deltaX >= 88 || deltaY <= 15 || deltaY >= 88;
+    }
 
-        return deltaX < 16 || deltaX >= 88 || deltaY < 16 || deltaY > 88; // TODO does last y need >= ?
+    /**
+     * Plays a random sound from {@code sounds}.
+     */
+    public void playRandomSound(Sounds... sound) {
+        playSound(RandomUtils.random(sound), 0);
+    }
+
+    /**
+     * Plays the sound with {@code id} with {@code delay}.
+     */
+    public void playSound(int soundId, int delay) {
+        int volume = varpManager.getValue(PersistentVarp.EFFECTS_VOLUME);
+        queue(new SoundMessageWriter(soundId, volume, delay));
+    }
+
+    /**
+     * Plays sound with {@code id} with no delay.
+     */
+    public void playSound(int soundId) {
+        playSound(soundId, 0);
+    }
+
+    /**
+     * Plays {@code sound} with no delay.
+     */
+    public void playSound(Sounds sound) {
+        playSound(sound, 0);
+    }
+
+    /**
+     * Plays {@code sound} with {@code delay}.
+     */
+    public void playSound(Sounds sound, int delay) {
+        int volume = varpManager.getValue(PersistentVarp.EFFECTS_VOLUME);
+        queue(new SoundMessageWriter(sound.getId(), volume, delay));
     }
 
     /**
@@ -660,40 +862,40 @@ public final class Player extends Mob {
     /**
      * Sets when the player is unmuted.
      *
-     * @param unmuteDate The value to set to.
+     * @param unmuteInstant The value to set to.
      */
-    public void setUnmuteDate(LocalDateTime unmuteDate) {
-        this.unmuteDate = unmuteDate;
+    public void setUnmuteInstant(Instant unmuteInstant) {
+        this.unmuteInstant = unmuteInstant;
     }
 
     /**
      * @return When the player is unmuted.
      */
-    public LocalDateTime getUnmuteDate() {
-        return unmuteDate;
+    public Instant getUnmuteInstant() {
+        return unmuteInstant;
     }
 
     /**
      * Sets when the player is unbanned.
      *
-     * @param unbanDate The value to set to.
+     * @param unbanInstant The value to set to.
      */
-    public void setUnbanDate(LocalDateTime unbanDate) {
-        this.unbanDate = unbanDate;
+    public void setUnbanInstant(Instant unbanInstant) {
+        this.unbanInstant = unbanInstant;
     }
 
     /**
      * @return When the player is unbanned.
      */
-    public LocalDateTime getUnbanDate() {
-        return unbanDate;
+    public Instant getUnbanInstant() {
+        return unbanInstant;
     }
 
     /**
      * @return {@code true} if the player is muted.
      */
     public boolean isMuted() {
-        return unmuteDate != null && !LocalDateTime.now().isAfter(unmuteDate);
+        return unmuteInstant != null && !Instant.now().isAfter(unmuteInstant);
     }
 
     /**
@@ -778,7 +980,10 @@ public final class Player extends Mob {
      * @param newClient The value to set to.
      */
     public void setClient(GameClient newClient) {
-        checkState(client == null, "GameClient can only be set once.");
+        if (client != null) {
+            logger.warn("GameClient can only be set once.");
+            return;
+        }
         client = newClient;
     }
 
@@ -797,19 +1002,19 @@ public final class Player extends Mob {
     }
 
     /**
-     * Sets the settings.
+     * Sets the music tab data.
      *
-     * @param settings The new value.
+     * @param musicTab The new value.
      */
-    public void setSettings(PlayerSettings settings) {
-        this.settings = settings;
+    public void setMusicTab(PlayerMusicTab musicTab) {
+        this.musicTab = musicTab;
     }
 
     /**
-     * @return The settings.
+     * @return The music tab data.
      */
-    public PlayerSettings getSettings() {
-        return settings;
+    public PlayerMusicTab getMusicTab() {
+        return musicTab;
     }
 
     /**
@@ -818,14 +1023,14 @@ public final class Player extends Mob {
      * @param running The new value.
      */
     public void setRunning(boolean running) {
-        settings.setRunning(running);
+        sendVarp(PersistentVarp.RUNNING, running);
     }
 
     /**
      * @return {@code true} if this player is running.
      */
     public boolean isRunning() {
-        return settings.isRunning();
+        return varpManager.getValue(PersistentVarp.RUNNING) == 1;
     }
 
     /**
@@ -891,22 +1096,6 @@ public final class Player extends Mob {
      */
     public void setRegionChanged(boolean regionChanged) {
         this.regionChanged = regionChanged;
-    }
-
-    /**
-     * @return The running direction.
-     */
-    public Direction getRunningDirection() {
-        return runningDirection;
-    }
-
-    /**
-     * Sets the running direction.
-     *
-     * @param runningDirection The value to set to.
-     */
-    public void setRunningDirection(Direction runningDirection) {
-        this.runningDirection = runningDirection;
     }
 
     /**
@@ -1031,13 +1220,6 @@ public final class Player extends Mob {
     }
 
     /**
-     * Advances the current dialogue queue.
-     */
-    public void advanceDialogues() {
-        dialogues.ifPresent(DialogueQueue::advance);
-    }
-
-    /**
      * Sets the dialouge queue.
      *
      * @param dialogues The new value.
@@ -1079,7 +1261,7 @@ public final class Player extends Mob {
     /**
      * @return {@code true} if a teleportation is in progress.
      */
-    public final boolean isTeleporting() {
+    public boolean isTeleporting() {
         return teleporting;
     }
 
@@ -1128,4 +1310,47 @@ public final class Player extends Mob {
     public void setDatabaseId(int databaseId) {
         this.databaseId = databaseId;
     }
+
+    /**
+     * @return The controller manager.
+     */
+    public ControllerManager getControllers() {
+        return controllers;
+    }
+
+    /**
+     * @return The varp manager.
+     */
+    public PersistentVarpManager getVarpManager() {
+        return varpManager;
+    }
+
+    /**
+     * @return The timeout timer.
+     */
+    public Stopwatch getTimeout() {
+        return timeout;
+    }
+
+    /**
+     * Sets the current dynamic map the player is in.
+     */
+    public void setDynamicMap(DynamicMap dynamicMap) {
+        this.dynamicMap = dynamicMap;
+    }
+
+    /**
+     * @return The current dynamic map the player is in.
+     */
+    public DynamicMap getDynamicMap() {
+        return dynamicMap;
+    }
+
+    /**
+     * @return {@code true} If the player is in a dynamic map.
+     */
+    public boolean isInDynamicMap() {
+        return dynamicMap != null;
+    }
+
 }

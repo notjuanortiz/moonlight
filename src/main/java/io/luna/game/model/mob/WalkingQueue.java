@@ -1,25 +1,30 @@
 package io.luna.game.model.mob;
 
+import com.google.common.base.MoreObjects;
 import io.luna.game.model.Direction;
+import io.luna.game.model.Entity;
 import io.luna.game.model.EntityType;
 import io.luna.game.model.Position;
+import io.luna.game.model.collision.CollisionManager;
+import io.luna.game.model.path.AStarPathfindingAlgorithm;
+import io.luna.game.model.path.EuclideanHeuristic;
+import io.luna.game.model.path.SimplePathfindingAlgorithm;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Queue;
-
-import static com.google.common.base.Preconditions.checkState;
 
 /**
  * A model representing an implementation of the walking queue.
  *
- * @author lare96 <http://github.org/lare96>
+ * @author lare96
  * @author Graham
  */
 public final class WalkingQueue {
 
-    // TODO Rewrite
+    // TODO Clean up, rewrite
 
     /**
      * A model representing a step in the walking queue.
@@ -43,9 +48,6 @@ public final class WalkingQueue {
          * @param y The y coordinate.
          */
         public Step(int x, int y) {
-            checkState(x >= 0, "x < 0");
-            checkState(y >= 0, "y < 0");
-
             this.x = x;
             this.y = y;
         }
@@ -76,6 +78,14 @@ public final class WalkingQueue {
             return Objects.hash(x, y);
         }
 
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                    .add("x", x)
+                    .add("y", y)
+                    .toString();
+        }
+
         /**
          * @return The x coordinate.
          */
@@ -101,6 +111,10 @@ public final class WalkingQueue {
      */
     private final Deque<Step> previous = new ArrayDeque<>();
 
+    private final CollisionManager collisionManager;
+    private final SimplePathfindingAlgorithm simplePathfinder;
+    private final AStarPathfindingAlgorithm astarPathfinder;
+
     /**
      * The mob.
      */
@@ -123,6 +137,9 @@ public final class WalkingQueue {
      */
     public WalkingQueue(Mob mob) {
         this.mob = mob;
+        collisionManager = mob.getWorld().getCollisionManager();
+        simplePathfinder = new SimplePathfindingAlgorithm(collisionManager);
+        astarPathfinder = new AStarPathfindingAlgorithm(collisionManager, new EuclideanHeuristic());
     }
 
     /**
@@ -130,68 +147,122 @@ public final class WalkingQueue {
      * taking steps.
      */
     public void process() {
-        // TODO clean up function
+        // TODO clean up function, traversable checks don't work
         Step current = new Step(mob.getPosition());
 
         Direction walkingDirection = Direction.NONE;
         Direction runningDirection = Direction.NONE;
 
         boolean restoreEnergy = true;
-
         Step next = this.current.poll();
         if (next != null) {
-            previous.add(next);
             walkingDirection = Direction.between(current, next);
-            current = next;
+            boolean blocked = false;//!collisionManager.traversable(mob.getPosition(), EntityType.NPC, walkingDirection);
+            if (blocked) {
+                walkingDirection = Direction.NONE;
+                clear();
+            } else {
+                previous.add(next);
+                current = next;
+                mob.setLastDirection(walkingDirection);
 
-            if (mob.getType() == EntityType.PLAYER) {
-                Player player = mob.asPlr();
-                if (player.isRunning() || runningPath) {
-                    next = decrementRunEnergy(player) ? this.current.poll() : null;
+                if (runningPath) {
+                    next = decrementRunEnergy() ? this.current.poll() : null;
                     if (next != null) {
-                        restoreEnergy = false;
-                        previous.add(next);
                         runningDirection = Direction.between(current, next);
-                        current = next;
+                        blocked = false;//!collisionManager.traversable(mob.getPosition(), EntityType.NPC, runningDirection);
+                        if (blocked) {
+                            runningDirection = Direction.NONE;
+                            clear();
+                        } else {
+                            restoreEnergy = false;
+                            previous.add(next);
+                            current = next;
+                            mob.setLastDirection(runningDirection);
+                        }
+                    } else {
+                        runningPath = false;
                     }
                 }
             }
-
-
-            Position newPosition = new Position(current.getX(), current.getY(), mob.getPosition().getZ());
-            mob.setPosition(newPosition);
         }
 
-        if (restoreEnergy && mob.getType() == EntityType.PLAYER) {
+        if (restoreEnergy) {
             incrementRunEnergy();
         }
 
         mob.setWalkingDirection(walkingDirection);
         mob.setRunningDirection(runningDirection);
+
+        Position newPosition = new Position(current.getX(), current.getY(), mob.getPosition().getZ());
+        mob.setPosition(newPosition);
     }
 
-    /**
-     * Walks to the specified offsets.
-     *
-     * @param offsetX The {@code x} offset.
-     * @param offsetY The {@code y} offset.
-     */
-    public void walk(int offsetX, int offsetY) {
-        var newPosition = mob.getPosition().translate(offsetX, offsetY);
-        addFirst(new Step(newPosition));
-    }
 
-    /**
-     * Walks to the specified {@code firstPos} and then {@code otherPos}.
-     *
-     * @param firstPos The first position.
-     * @param otherPos The other positions.
-     */
-    public void walk(Position firstPos, Position... otherPos) {
-        addFirst(new Step(firstPos));
-        for (var nextPos : otherPos) {
-            add(new Step(nextPos));
+    public void walk(Position target) {
+        Deque<Position> path = mob.getType() == EntityType.PLAYER ? astarPathfinder.find(mob.getPosition(), target) :
+                       simplePathfinder.find(mob.getPosition(), target);
+        int size = path.size();
+        if (size == 1) {
+            addFirst(path.poll().toStep());
+        } else if (size > 1) {
+            addFirst(path.poll().toStep());
+            for (; ; ) {
+                Position position = path.poll();
+                if (position == null) {
+                    break;
+                }
+                add(position.toStep());
+            }
         }
+    }
+
+    public void walk(Entity target, Optional<Direction> facing) {
+        int sizeX = mob.sizeX();
+        int sizeY = mob.sizeY();
+        int targetSizeX = target.sizeX();
+        int targetSizeY = target.sizeY();
+        Position position = mob.getPosition();
+        int height = position.getZ();
+        Position targetPosition = target.getPosition();
+
+        Direction direction = facing.orElse(Direction.between(position, targetPosition));
+        int dx = direction.getTranslation().getX();
+        int dy = direction.getTranslation().getY();
+
+        int targetX = dx <= 0 ? targetPosition.getX() : targetPosition.getX() + targetSizeX - 1;
+        int targetY = dy <= 0 ? targetPosition.getY() : targetPosition.getY() + targetSizeY - 1;
+        int offsetX;
+        if (dx < 0) {
+            offsetX = -sizeX;
+        } else if (dx > 0) {
+            offsetX = 1;
+        } else {
+            offsetX = 0;
+        }
+        int offsetY;
+        if (dy < 0) {
+            offsetY = -sizeY;
+        } else if (dy > 0) {
+            offsetY = 1;
+        } else {
+            offsetY = 0;
+        }
+        walk(new Position(targetX + offsetX, targetY + offsetY, height));
+    }
+
+    public void walk(Entity target) {
+        if (target instanceof Mob) {
+            Mob targetMob = (Mob) target;
+            walk(target, Optional.of(targetMob.getLastDirection()));
+        } else {
+            walk(target, Optional.empty());
+        }
+    }
+
+    public void walkBehind(Mob target) {
+        Direction direction = target.getLastDirection().opposite();
+        walk(target, Optional.of(direction));
     }
 
     /**
@@ -217,7 +288,6 @@ public final class WalkingQueue {
             }
         }
         previous.clear();
-
         add(step);
     }
 
@@ -268,7 +338,11 @@ public final class WalkingQueue {
      *
      * @return {@code false} if the player can no longer run.
      */
-    private boolean decrementRunEnergy(Player player) {
+    private boolean decrementRunEnergy() {
+        if (mob.getType() != EntityType.PLAYER) {
+            return true;
+        }
+        Player player = (Player) mob;
         double totalWeight = player.getWeight();
         double energyReduction = 0.117 * 2 * Math
                 .pow(Math.E, 0.0027725887222397812376689284858327062723020005374410 * totalWeight);
@@ -287,6 +361,8 @@ public final class WalkingQueue {
      * A function that implements an algorithm to restore run energy.
      */
     private void incrementRunEnergy() {
+        if (mob.getType() != EntityType.PLAYER)
+            return;
         Player player = mob.asPlr();
 
         double runEnergy = player.getRunEnergy();
@@ -327,7 +403,6 @@ public final class WalkingQueue {
      * @param runningPath The new value.
      */
     public void setRunningPath(boolean runningPath) {
-        checkState(mob.getType() == EntityType.PLAYER, "cannot change running value for NPCs");
         this.runningPath = runningPath;
     }
 
@@ -344,6 +419,13 @@ public final class WalkingQueue {
      * @param locked The new value.
      */
     public void setLocked(boolean locked) {
+        if (locked) {
+            clear();
+        }
         this.locked = locked;
+    }
+
+    public AStarPathfindingAlgorithm getAstarPathfinder() {
+        return astarPathfinder;
     }
 }

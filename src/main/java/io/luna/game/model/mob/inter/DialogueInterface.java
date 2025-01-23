@@ -8,7 +8,7 @@ import java.util.function.Consumer;
 /**
  * An {@link AbstractInterface} implementation that opens a dialogue interface.
  *
- * @author lare96 <http://github.org/lare96>
+ * @author lare96
  */
 public class DialogueInterface extends StandardInterface {
 
@@ -16,6 +16,11 @@ public class DialogueInterface extends StandardInterface {
      * The consumer to apply when this dialogue opens.
      */
     private Consumer<Player> openAction;
+
+    /**
+     * The consumer to apply when this dialogue closes.
+     */
+    private Consumer<Player> closeAction;
 
     /**
      * Creates a new {@link DialogueInterface}.
@@ -32,10 +37,18 @@ public class DialogueInterface extends StandardInterface {
         if (shouldOpen) {
             int id = unsafeGetId();
             player.queue(new DialogueInterfaceMessageWriter(id));
-
-            applyOpenAction(player);
+            if (openAction != null) {
+                openAction.accept(player);
+            }
         } else {
             player.getInterfaces().close();
+        }
+    }
+
+    @Override
+    public final void onClose(Player player) {
+        if (closeAction != null) {
+            closeAction.accept(player);
         }
     }
 
@@ -51,22 +64,24 @@ public class DialogueInterface extends StandardInterface {
     }
 
     /**
-     * Applies the open action consumer.
-     *
-     * @param player The player.
-     */
-    private void applyOpenAction(Player player) {
-        if (openAction != null) {
-            openAction.accept(player);
-        }
-    }
-
-    /**
      * Sets the open action consumer.
      *
      * @param openAction The new value.
      */
     public final void setOpenAction(Consumer<Player> openAction) {
         this.openAction = openAction;
+    }
+
+    /**
+     * Sets the close action consumer.
+     *
+     * @param closeAction The new value.
+     */
+    public void setCloseAction(Consumer<Player> closeAction) {
+        this.closeAction = closeAction;
+    }
+
+    public boolean hasCloseAction() {
+        return closeAction != null;
     }
 }

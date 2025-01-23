@@ -4,6 +4,7 @@ import com.google.common.base.MoreObjects;
 import io.luna.game.model.def.EquipmentDefinition;
 import io.luna.game.model.def.ItemDefinition;
 
+import java.util.NoSuchElementException;
 import java.util.Objects;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -11,9 +12,33 @@ import static com.google.common.base.Preconditions.checkArgument;
 /**
  * A model representing a single item.
  *
- * @author lare96 <http://github.org/lare96>
+ * @author lare96
  */
 public final class Item {
+
+    /**
+     * Retrieves an item instance by name and amount.
+     *
+     * @param name The name.
+     * @param amount The amount.
+     * @return The item.
+     */
+    public static Item byName(String name, int amount) {
+        boolean noted = name.endsWith("(noted)");
+        return ItemDefinition.ALL.lookup(it -> it.isTradeable() && it.getName().equals(name) && it.isNoted() == noted).
+                map(it -> new Item(it.getId(), amount)).
+                orElseThrow(() -> new NoSuchElementException("Item (" + name + ") was not valid or found."));
+    }
+
+    /**
+     * Retrieves an item instance by name and with wn amount of 1.
+     *
+     * @param name The name.
+     * @return The item.
+     */
+    public static Item byName(String name) {
+        return byName(name, 1);
+    }
 
     /**
      * The identifier.
@@ -122,13 +147,12 @@ public final class Item {
      * @param add The amount to add.
      * @return The new item.
      */
-    // TODO change to update amount
-    public Item changeAmount(int add) {
+    public Item addAmount(int add) {
         boolean positive = add > 0;
         int newAmount = amount + add;
 
         // Handle potential overflows and underflows.
-        if(newAmount < 0) {
+        if (newAmount < 0) {
             newAmount = positive ? Integer.MAX_VALUE : 0;
         }
         return new Item(id, newAmount);
@@ -145,6 +169,15 @@ public final class Item {
             return this;
         }
         return new Item(id, newAmount);
+    }
+
+    /**
+     * @return The unnoted item definition of this item. If this item definition is already unnoted, returns the same value as
+     * {@link #getItemDef()}.
+     */
+    public ItemDefinition getUnnotedItemDef() {
+        ItemDefinition current = getItemDef();
+        return current.getUnnotedId().isPresent() ? ItemDefinition.ALL.retrieve(current.getUnnotedId().getAsInt()) : current;
     }
 
     /**

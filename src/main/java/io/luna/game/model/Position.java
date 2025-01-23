@@ -2,23 +2,29 @@ package io.luna.game.model;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Range;
-import io.luna.game.model.chunk.ChunkPosition;
+import io.luna.game.model.chunk.Chunk;
+import io.luna.game.model.mob.WalkingQueue.Step;
 
 import java.util.Objects;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
 /**
- * A model representing a single tile on the Runescape map.
+ * A {@link Location} made up of a single tile on the Runescape map.
  *
- * @author lare96 <http://github.org/lare96>
+ * @author lare96
  */
-public final class Position {
+public final class Position implements Location {
+// todo new documentation, clean up, explain more stuff
+    /**
+     * The maximum amount of tiles a player can view.
+     */
+    public static final int VIEWING_DISTANCE = 15;
 
     /**
      * A {@link Range} of all height levels.
      */
-    public static final Range<Integer> HEIGHT_LEVELS = Range.closed(0, 3);
+    public static final Range<Integer> HEIGHT_LEVELS = Range.closedOpen(0, 4);
 
     /**
      * The x coordinate.
@@ -36,11 +42,6 @@ public final class Position {
     private final int z;
 
     /**
-     * The chunk position.
-     */
-    private transient ChunkPosition chunkPosition;
-
-    /**
      * Creates a new {@link Position}, where all {@code x, y, and z} are non-negative.
      *
      * @param x The x coordinate.
@@ -52,8 +53,7 @@ public final class Position {
     public Position(int x, int y, int z) {
         checkArgument(x >= 0, "x < 0");
         checkArgument(y >= 0, "y < 0");
-        checkArgument(z >= 0 && z <= 3, "z < 0 || z > 3");
-
+        checkArgument(HEIGHT_LEVELS.contains(z), z+" (z >= 0 && z < 4)");
         this.x = x;
         this.y = y;
         this.z = z;
@@ -67,6 +67,11 @@ public final class Position {
      */
     public Position(int x, int y) {
         this(x, y, 0);
+    }
+
+    @Override
+    public boolean contains(Position position) {
+        return position.equals(this);
     }
 
     @Override
@@ -92,9 +97,28 @@ public final class Position {
     }
 
     /**
+     * Converts this position to a {@link Step}.
+     */
+    public Step toStep() {
+        return new Step(x, y);
+    }
+
+    /**
+     * Gets the distance between this position and another position. Only x and y are considered (i.e. 2 dimensions).
+     *
+     * @param other The other position.
+     * @return The distance.
+     */
+    public int getDistance(Position other) {
+        int deltaX = getX() - other.getX();
+        int deltaY = getY() - other.getY();
+        return (int) Math.ceil(Math.sqrt(deltaX * deltaX + deltaY * deltaY));
+    }
+
+    /**
      * Determines if this position is within the given distance of another position.
      *
-     * @param other    The position to compare.
+     * @param other The position to compare.
      * @param distance The distance from {@code other} to compare. This parameter must be non-negative.
      * @return {@code true} if {@code other} is within {@code distance}, and on the same plane.
      * @throws IllegalArgumentException If distance < 0.
@@ -114,10 +138,17 @@ public final class Position {
      * Determines if this position is viewable from another position.
      *
      * @param other The position to compare.
-     * @return {@code true} if {@code other} is within {@link  EntityConstants#VIEWING_DISTANCE}.
+     * @return {@code true} if {@code other} is within {@link  #VIEWING_DISTANCE}.
      */
     public boolean isViewable(Position other) {
-        return isWithinDistance(other, EntityConstants.VIEWING_DISTANCE);
+        return isWithinDistance(other, VIEWING_DISTANCE);
+    }
+
+    /**
+     * Forwards to {@link #isViewable(Position)} with {@link Entity#getPosition()} as the argument.
+     */
+    public boolean isViewable(Entity other) {
+        return isViewable(other.getPosition());
     }
 
     /**
@@ -141,10 +172,23 @@ public final class Position {
      * @return The translated position.
      */
     public Position translate(int amountX, int amountY, int amountZ) {
-        if(amountX == 0 && amountY == 0 && amountZ == 0) {
+        if (amountX == 0 && amountY == 0 && amountZ == 0) {
             return this;
         }
         return new Position(x + amountX, y + amountY, z + amountZ);
+    }
+
+    /**
+     * Returns a new position translated by the specified amounts. The z coordinate will remain
+     * unchanged.
+     *
+     * @param amount The amount.
+     * @param direction The direction.
+     * @return The translated position.
+     */
+    public Position translate(int amount, Direction direction) {
+        Step translation = direction.getTranslation();
+        return translate(amount * translation.getX(), amount * translation.getY(), 0);
     }
 
     /**
@@ -156,7 +200,30 @@ public final class Position {
      * @return The translated position.
      */
     public Position translate(int amountX, int amountY) {
-        return translate(amountX, amountY, z);
+        return translate(amountX, amountY, 0);
+    }
+
+    /**
+     * Returns a new {@link Position} identical to this one in values, except with {@code newZ}.
+     * @param newZ The new {@code z}.
+     * @return
+     */
+    public Position setZ(int newZ) {
+        return new Position(x, y, newZ);
+    }
+
+    /**
+     * Gets the central x coordinate of this position's chunk.
+     */
+    public int getChunkX() {
+        return x / 8;
+    }
+
+    /**
+     * Gets the central y coordinate of this position's chunk.
+     */
+    public int getChunkY() {
+        return y / 8;
     }
 
     /**
@@ -165,7 +232,7 @@ public final class Position {
      * @return The bottom-left chunk x.
      */
     public int getBottomLeftChunkX() {
-        return (x / 8) - 6;
+        return x / 8 - 6;
     }
 
     /**
@@ -174,7 +241,7 @@ public final class Position {
      * @return The bottom-left chunk y.
      */
     public int getBottomLeftChunkY() {
-        return (y / 8) - 6;
+        return y / 8 - 6;
     }
 
     /**
@@ -183,7 +250,7 @@ public final class Position {
      * @param base The base chunk.
      */
     public int getLocalX(Position base) {
-        return x - (base.getBottomLeftChunkX() * 8);
+        return x - base.getBottomLeftChunkX() * 8;
     }
 
     /**
@@ -192,46 +259,25 @@ public final class Position {
      * @param base The base chunk.
      */
     public int getLocalY(Position base) {
-        return y - (base.getBottomLeftChunkY() * 8);
+        return y - base.getBottomLeftChunkY() * 8;
     }
 
     /**
-     * Returns the local x coordinate within the chunk of this position.
+     * Returns the {@link Chunk} that this position is contained in.
      *
-     * @return The local x coordinate.
+     * @return The chunk.
      */
-    public int getLocalX() {
-        return getLocalX(this);
+    public Chunk getChunk() {
+        return new Chunk(this);
     }
 
     /**
-     * Returns the local y coordinate within the chunk of this position.
+     * Returns the {@link Region} that this position is contained in.
      *
-     * @return The local y coordinate.
+     * @return The region.
      */
-    public int getLocalY() {
-        return getLocalY(this);
-    }
-
-    /**
-     * Returns a new {@link ChunkPosition} built from this position.
-     *
-     * @return The chunk position.
-     */
-    public ChunkPosition getChunkPosition() {
-        if (chunkPosition == null) {
-            chunkPosition = new ChunkPosition(this);
-        }
-        return chunkPosition;
-    }
-
-    /**
-     * Returns a new {@link RegionPosition} built from this position.
-     *
-     * @return The region position.
-     */
-    public RegionPosition getRegionPosition() {
-        return new RegionPosition(this);
+    public Region getRegion() {
+        return new Region(this);
     }
 
     /**

@@ -1,16 +1,16 @@
 package io.luna.game.model.mob.block;
 
-import io.luna.game.model.mob.Graphic;
 import io.luna.game.model.mob.Npc;
 import io.luna.game.model.mob.Player;
 import io.luna.game.model.mob.block.UpdateFlagSet.UpdateFlag;
 import io.luna.net.codec.ByteMessage;
 import io.luna.net.codec.ByteOrder;
+import io.luna.net.codec.ValueType;
 
 /**
  * An {@link UpdateBlock} implementation for the {@code GRAPHIC} update block.
  *
- * @author lare96 <http://github.org/lare96>
+ * @author lare96
  */
 public final class GraphicUpdateBlock extends UpdateBlock {
 
@@ -24,8 +24,8 @@ public final class GraphicUpdateBlock extends UpdateBlock {
     @Override
     public void encodeForPlayer(Player player, ByteMessage msg) {
         Graphic graphic = unwrap(player.getGraphic());
-        msg.putShort(graphic.getId(), ByteOrder.LITTLE);
-        msg.putInt(graphic.getHeight() << 16 | graphic.getDelay() & 0xFFFF);
+        msg.putShort(graphic.getId(), ValueType.ADD);
+        msg.putInt(graphic.getHeight() << 16 | graphic.getDelay() & 0xFFFF, ByteOrder.MIDDLE);
     }
 
     @Override
@@ -37,11 +37,11 @@ public final class GraphicUpdateBlock extends UpdateBlock {
 
     @Override
     public int getPlayerMask() {
-        return 256;
+        return 0x200;
     }
 
     @Override
     public int getNpcMask() {
-        return 128;
+        return 0x4;
     }
 }

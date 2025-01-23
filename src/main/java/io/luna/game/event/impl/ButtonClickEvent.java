@@ -5,9 +5,9 @@ import io.luna.game.model.mob.Player;
 /**
  * An event sent when a player clicks a button on an interface.
  *
- * @author lare96 <http://github.org/lare96>
+ * @author lare96
  */
-public final class ButtonClickEvent extends PlayerEvent {
+public final class ButtonClickEvent extends PlayerEvent implements ControllableEvent {
 
     /**
      * The clicked button.

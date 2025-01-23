@@ -1,6 +1,5 @@
 package io.luna.game.model.mob.block;
 
-import io.luna.game.model.mob.ForcedMovement;
 import io.luna.game.model.mob.Player;
 import io.luna.game.model.mob.block.UpdateFlagSet.UpdateFlag;
 import io.luna.net.codec.ByteMessage;
@@ -9,7 +8,7 @@ import io.luna.net.codec.ValueType;
 /**
  * An {@link UpdateBlock} implementation for the {@code FORCED_MOVEMENT} update block.
  *
- * @author lare96 <http://github.org/lare96>
+ * @author lare96
  */
 public final class ForcedMovementUpdateBlock extends UpdateBlock {
 
@@ -34,6 +33,6 @@ public final class ForcedMovementUpdateBlock extends UpdateBlock {
 
     @Override
     public int getPlayerMask() {
-        return 256;
+        return 0x100;
     }
 }

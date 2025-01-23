@@ -1,17 +1,17 @@
 package io.luna.net.msg.out;
 
+import io.luna.game.model.chunk.ChunkUpdatableMessage;
 import io.luna.game.model.mob.Player;
 import io.luna.net.codec.ByteMessage;
-import io.luna.net.codec.ByteOrder;
 import io.luna.net.codec.ValueType;
 import io.luna.net.msg.GameMessageWriter;
 
 /**
  * A {@link GameMessageWriter} implementation that displays a ground item.
  *
- * @author lare96 <http://github.org/lare96>
+ * @author lare96
  */
-public final class AddGroundItemMessageWriter extends GameMessageWriter {
+public final class AddGroundItemMessageWriter extends GameMessageWriter implements ChunkUpdatableMessage {
 
     /**
      * The item identifier.
@@ -43,10 +43,10 @@ public final class AddGroundItemMessageWriter extends GameMessageWriter {
 
     @Override
     public ByteMessage write(Player player) {
-        ByteMessage msg = ByteMessage.message(44);
-        msg.putShort(id, ValueType.ADD, ByteOrder.LITTLE);
-        msg.putShort(amount);
-        msg.put(/*offset*/ 0);
+        ByteMessage msg = ByteMessage.message(107);
+        msg.putShort(id);
+        msg.put(offset, ValueType.NEGATE);
+        msg.putShort(amount, ValueType.ADD);
         return msg;
     }
 }

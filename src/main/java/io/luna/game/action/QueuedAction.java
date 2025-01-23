@@ -7,15 +7,16 @@ import io.luna.game.task.Task;
 import java.util.Optional;
 
 /**
- * An {@link Action} implementation which queues up to {@code 1} additional action. Any subsequent actions submitted
- * replace the old action. This behaviour is required for content such as alchemy and thieving.
+ * An {@link Action} implementation similar to a {@link ThrottledAction}. It queues up to {@code 1} additional
+ * equivalent action instead of completely throttling the action. This behaviour is required for content such as
+ * alchemy and thieving.
  * <p>
  * <p>
  * These actions are executed instantly. The {@code duration} parameter simply refers to how long the player must wait
  * to execute a subsequent action. If this action hasn't been interrupted, once the duration completes the queued
  * action is executed.
  *
- * @author lare96 <http://github.com/lare96>
+ * @author lare96 
  */
 public abstract class QueuedAction<T extends Mob> extends Action<T> {
 

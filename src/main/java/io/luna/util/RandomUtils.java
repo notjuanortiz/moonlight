@@ -17,11 +17,25 @@ import static com.google.common.base.Preconditions.checkArgument;
  * because of the way that {@code ThreadLocalRandom} works, even in completely single-threaded situations it runs up
  * to three times faster than {@code Random}.
  *
- * @author lare96 <http://github.com/lare96>
+ * @author lare96
  * @see <a href= "http://java-performance.info/java-util-random-java-util-concurrent-threadlocalrandom-multithreaded-environments/"
  * >java.util.Random and java.util.concurrent.ThreadLocalRandom in multithreaded environments</a>
  */
 public final class RandomUtils {
+
+
+    /**
+     * Determines if {@code rational} will be picked based on its rarity.
+     *
+     * @return {@code true} if picked, {@code false} otherwise.
+     */
+    public static boolean rollSuccess(Rational rational) {
+        if (rational.getNumerator() <= 0) {
+            return false;
+        } else if (rational.getNumerator() >= rational.getDenominator()) {
+            return true;
+        } else return ThreadLocalRandom.current().nextLong(0, rational.getDenominator()) < rational.getNumerator();
+    }
 
     /**
      * Returns a pseudo-random {@code int} value between inclusive {@code min} and inclusive {@code max}.
@@ -167,7 +181,6 @@ public final class RandomUtils {
      * @return The random value.
      */
     public static <T> T random(List<T> list) {
-        // TODO Separate LinkedList implementation.
         return list.get(ThreadLocalRandom.current().nextInt(list.size()));
     }
 

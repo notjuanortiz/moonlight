@@ -1,6 +1,8 @@
 package io.luna.net.client;
 
+import io.luna.Luna;
 import io.luna.LunaContext;
+import io.luna.game.GameSettings.PasswordStrength;
 import io.luna.game.model.World;
 import io.luna.game.model.mob.Player;
 import io.luna.game.model.mob.PlayerCredentials;
@@ -9,9 +11,9 @@ import io.luna.game.service.LoginService;
 import io.luna.game.service.LoginService.LoginRequest;
 import io.luna.net.codec.game.GameMessageDecoder;
 import io.luna.net.codec.game.GameMessageEncoder;
-import io.luna.net.codec.login.LoginRequestMessage;
-import io.luna.net.codec.login.LoginResponse;
-import io.luna.net.codec.login.LoginResponseMessage;
+import io.luna.net.msg.login.LoginRequestMessage;
+import io.luna.net.msg.login.LoginResponse;
+import io.luna.net.msg.login.LoginResponseMessage;
 import io.luna.net.msg.GameMessageRepository;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
@@ -20,7 +22,7 @@ import org.mindrot.jbcrypt.BCrypt;
 /**
  * A {@link Client} implementation model representing login protocol I/O communications.
  *
- * @author lare96 <http://github.com/lare96>
+ * @author lare96 
  */
 public class LoginClient extends Client<LoginRequestMessage> {
 
@@ -64,8 +66,9 @@ public class LoginClient extends Client<LoginRequestMessage> {
         String password = msg.getPassword();
         var player = new Player(context, new PlayerCredentials(username, password));
 
-        if (!username.matches("^[a-z0-9_ ]{1,12}$") || password.isEmpty() || password.length() > 20) {
-            // Username/password format invalid, drop connection.
+        if (!username.matches("^[a-z0-9_ ]{1,12}$") ||
+                password.isEmpty() || password.length() > 20) {
+            // Username/password format invalid, drop connection. Or we're already loading player data.
             channel.close();
         } else {
             // Passed initial check, submit login request.
@@ -90,7 +93,8 @@ public class LoginClient extends Client<LoginRequestMessage> {
      * @param enteredPassword The entered password.
      */
     public LoginResponse getLoginResponse(PlayerData data, String enteredPassword) {
-        if (data == null) {
+        PasswordStrength passwordStrength = Luna.settings().game().passwordStrength();
+        if (data == null || passwordStrength == PasswordStrength.NONE) {
             return LoginResponse.NORMAL;
         } else if (!BCrypt.checkpw(enteredPassword, data.password)) {
             return LoginResponse.INVALID_CREDENTIALS;

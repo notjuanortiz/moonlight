@@ -1,20 +1,18 @@
 package io.luna;
 
-import com.moandjiezana.toml.Toml;
-import io.luna.util.LoggingSettings;
+import io.luna.util.GsonUtils;
 import io.netty.util.internal.logging.InternalLoggerFactory;
 import io.netty.util.internal.logging.JdkLoggerFactory;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * Instantiates a {@link LunaServer} that will start Luna.
  *
- * @author lare96 <http://github.org/lare96>
+ * @author lare96
  */
 public final class Luna {
 
@@ -29,16 +27,6 @@ public final class Luna {
     private static final LunaSettings settings;
 
     /**
-     * The log4j2 settings.
-     */
-    private static final LoggingSettings loggingSettings;
-
-    /**
-     * The mechanism used to read {@code .toml} files.
-     */
-    private static final Toml TOML = new Toml();
-
-    /**
      * A private constructor.
      */
     private Luna() {
@@ -48,14 +36,16 @@ public final class Luna {
         try {
             Thread.currentThread().setName("InitializationThread");
 
+            settings = loadSettings();
+
             InternalLoggerFactory.setDefaultFactory(JdkLoggerFactory.INSTANCE);
-            loggingSettings = loadLoggingSettings();
-            System.setProperty("log4j2.configurationFactory", "io.luna.util.LoggingConfigurationFactory");
+            System.setProperty("log4j2.configurationFactory", "io.luna.util.logging.LoggingConfigurationFactory");
             System.setProperty("log4j.skipJansi", "true");
             System.setProperty("Log4jContextSelector",
                     "org.apache.logging.log4j.core.async.AsyncLoggerContextSelector");
+
             logger = LogManager.getLogger();
-            settings = loadSettings();
+
         } catch (Exception e) {
             throw new ExceptionInInitializerError(e);
         }
@@ -68,8 +58,8 @@ public final class Luna {
      */
     public static void main(String[] args) {
         try {
-            var luna = new LunaServer();
-            luna.init();
+            var context = new LunaContext();
+            context.getServer().init();
         } catch (Exception e) {
             logger.fatal("Luna could not be started.", e);
             System.exit(0);
@@ -82,20 +72,7 @@ public final class Luna {
      * @return The settings object.
      */
     private static LunaSettings loadSettings() throws IOException {
-        try (var bufferedReader = Files.newBufferedReader(Path.of("data", "luna.toml"))) {
-            return TOML.read(bufferedReader).to(LunaSettings.class);
-        }
-    }
-
-    /**
-     * Loads the contents of the file and parses it into a {@link LoggingSettings} object.
-     *
-     * @return The logging settings object.
-     */
-    private static LoggingSettings loadLoggingSettings() throws IOException {
-        try (var bufferedReader = Files.newBufferedReader(Path.of("data", "logging.toml"))) {
-            return TOML.read(bufferedReader).to(LoggingSettings.class);
-        }
+        return GsonUtils.readAsType(Paths.get("data", "luna.json"), LunaSettings.class);
     }
 
     /**
@@ -103,12 +80,5 @@ public final class Luna {
      */
     public static LunaSettings settings() {
         return settings;
-    }
-
-    /**
-     * @return The logging settings.
-     */
-    public static LoggingSettings loggingSettings() {
-        return loggingSettings;
     }
 }

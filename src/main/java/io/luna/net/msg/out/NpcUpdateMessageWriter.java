@@ -11,15 +11,22 @@ import io.luna.game.model.mob.block.UpdateState;
 import io.luna.net.codec.ByteMessage;
 import io.luna.net.codec.MessageType;
 import io.luna.net.msg.GameMessageWriter;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.Iterator;
 
 /**
  * A {@link GameMessageWriter} implementation that sends an NPC update message.
  *
- * @author lare96 <http://github.org/lare96>
+ * @author lare96
  */
 public final class NpcUpdateMessageWriter extends GameMessageWriter {
+
+    /**
+     * The logger.
+     */
+    private final Logger logger = LogManager.getLogger();
 
     /**
      * The NPC update block set.
@@ -28,7 +35,7 @@ public final class NpcUpdateMessageWriter extends GameMessageWriter {
 
     @Override
     public ByteMessage write(Player player) {
-        ByteMessage msg = ByteMessage.message(65, MessageType.VAR_SHORT);
+        ByteMessage msg = ByteMessage.message(71, MessageType.VAR_SHORT);
         ByteMessage blockMsg = ByteMessage.raw();
 
         try {
@@ -38,7 +45,6 @@ public final class NpcUpdateMessageWriter extends GameMessageWriter {
             Iterator<Npc> iterator = player.getLocalNpcs().iterator();
             while (iterator.hasNext()) {
                 Npc other = iterator.next();
-
                 if (other.isViewableFrom(player) &&
                         other.getState() == EntityState.ACTIVE) {
                     handleMovement(other, msg);
@@ -65,7 +71,6 @@ public final class NpcUpdateMessageWriter extends GameMessageWriter {
                     npcsAdded++;
                 }
             }
-
             if (blockMsg.getBuffer().writerIndex() > 0) {
                 msg.putBits(14, 16383);
                 msg.endBitAccess();
@@ -75,7 +80,7 @@ public final class NpcUpdateMessageWriter extends GameMessageWriter {
             }
         } catch (Exception e) {
             msg.release();
-            throw new RuntimeException(e);
+            logger.catching(e);
         } finally {
             blockMsg.release();
         }
@@ -92,11 +97,11 @@ public final class NpcUpdateMessageWriter extends GameMessageWriter {
         int deltaY = addNpc.getPosition().getY() - player.getPosition().getY();
 
         msg.putBits(14, addNpc.getIndex());
+        msg.putBit(updateRequired);
         msg.putBits(5, deltaY);
         msg.putBits(5, deltaX);
-        msg.putBit(updateRequired);
-        msg.putBits(12, addNpc.getId());
         msg.putBit(true);
+        msg.putBits(13, addNpc.getId());
     }
 
     /**
@@ -104,19 +109,27 @@ public final class NpcUpdateMessageWriter extends GameMessageWriter {
      */
     private void handleMovement(Npc npc, ByteMessage msg) {
         boolean updateRequired = !npc.getFlags().isEmpty();
+        Direction walkingDirection = npc.getWalkingDirection();
+        Direction runningDirection = npc.getRunningDirection();
 
-        if (npc.getWalkingDirection() == Direction.NONE) {
+        if (runningDirection != Direction.NONE) {
+            msg.putBit(true);
+            msg.putBits(2, 2);
+            msg.putBits(3, walkingDirection.getId());
+            msg.putBits(3, runningDirection.getId());
+            msg.putBit(updateRequired);
+        } else if (walkingDirection != Direction.NONE) {
+            msg.putBit(true);
+            msg.putBits(2, 1);
+            msg.putBits(3, walkingDirection.getId());
+            msg.putBit(updateRequired);
+        } else {
             if (updateRequired) {
                 msg.putBit(true);
                 msg.putBits(2, 0);
             } else {
                 msg.putBit(false);
             }
-        } else {
-            msg.putBit(true);
-            msg.putBits(2, 1);
-            msg.putBits(3, npc.getWalkingDirection().getId());
-            msg.putBit(updateRequired);
         }
     }
 }

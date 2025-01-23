@@ -6,14 +6,15 @@ import io.luna.game.model.Entity;
 import io.luna.game.model.EntityType;
 import io.luna.game.model.Position;
 import io.luna.game.model.StationaryEntity;
+import io.luna.game.model.chunk.ChunkUpdatableMessage;
+import io.luna.game.model.chunk.ChunkUpdatableRequest;
+import io.luna.game.model.chunk.ChunkUpdatableView;
 import io.luna.game.model.def.ItemDefinition;
-import io.luna.game.model.mob.Player;
-import io.luna.net.msg.GameMessageWriter;
 import io.luna.net.msg.out.AddGroundItemMessageWriter;
 import io.luna.net.msg.out.RemoveGroundItemMessageWriter;
+import io.luna.net.msg.out.UpdateGroundItemMessageWriter;
 
 import java.util.Objects;
-import java.util.Optional;
 import java.util.OptionalInt;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -22,7 +23,7 @@ import static com.google.common.base.Preconditions.checkState;
 /**
  * An {@link Entity} implementation representing an item on a tile.
  *
- * @author lare96 <http://github.com/lare96>
+ * @author lare96
  */
 public class GroundItem extends StationaryEntity {
 
@@ -48,9 +49,10 @@ public class GroundItem extends StationaryEntity {
      * @param id The item identifier.
      * @param amount The item amount.
      * @param position The position of the item.
+     * @param view Who this item is viewable to.
      */
-    public GroundItem(LunaContext context, int id, int amount, Position position, Optional<Player> player) {
-        super(context, position, EntityType.ITEM, player);
+    public GroundItem(LunaContext context, int id, int amount, Position position, ChunkUpdatableView view) {
+        super(context, position, EntityType.ITEM, view);
         checkArgument(ItemDefinition.isIdValid(id), "Invalid item identifier.");
         checkArgument(amount > 0, "Amount must be above 0.");
 
@@ -81,7 +83,7 @@ public class GroundItem extends StationaryEntity {
                 add("x", position.getX()).
                 add("y", position.getY()).
                 add("z", position.getZ()).
-                add("owner", getOwner().map(Player::getUsername).orElse("null")).
+                add("view", getView()).
                 toString();
     }
 
@@ -91,12 +93,22 @@ public class GroundItem extends StationaryEntity {
     }
 
     @Override
-    protected final GameMessageWriter showMessage(int offset) {
+    public final int sizeX() {
+        return 0;
+    }
+
+    @Override
+    public final int sizeY() {
+        return 0;
+    }
+
+    @Override
+    protected final ChunkUpdatableMessage showMessage(int offset) {
         return new AddGroundItemMessageWriter(id, amount, offset);
     }
 
     @Override
-    protected final GameMessageWriter hideMessage(int offset) {
+    protected final ChunkUpdatableMessage hideMessage(int offset) {
         return new RemoveGroundItemMessageWriter(id, offset);
     }
 
@@ -110,11 +122,11 @@ public class GroundItem extends StationaryEntity {
         return id == other.id &&
                 amount == other.amount &&
                 Objects.equals(position, other.position) &&
-                Objects.equals(getOwner(), other.getOwner());
+                Objects.equals(getView(), other.getView());
     }
 
     /**
-     * Sets whether or not this item will expire or not.
+     * Sets whether this item will expire or not.
      *
      * @param expire The value.
      */
@@ -152,8 +164,7 @@ public class GroundItem extends StationaryEntity {
      * does not expire.
      */
     public final int getExpireTicks() {
-        checkState(isExpiring(), "This item does not expire.");
-        return expireTicks.getAsInt();
+        return expireTicks.orElseThrow(() -> new IllegalStateException("This item does not expire."));
     }
 
     /**
@@ -180,15 +191,18 @@ public class GroundItem extends StationaryEntity {
     }
 
     /**
-     * Hides this item, changes its amount, and then shows it again.
+     * Updates the amount of this item in real time using {@link UpdateGroundItemMessageWriter}.
      *
-     * @param amount The amount to change to. Cannot be negative.
+     * @param value The amount to change to. Cannot be negative.
      */
-    public final void setAmount(int amount) {
-        checkArgument(amount > 0, "amount cannot be < 0");
-        hide();
-        this.amount = amount;
-        show();
+    public final void updateAmount(int value) {
+        checkArgument(value > 0, "amount cannot be < 0");
+        checkArgument(def().isStackable() || amount == 1,
+                "Non-stackable ground items have a maximum amount of 1.");
+        int offset = getChunk().offset(position);
+        UpdateGroundItemMessageWriter msg = new UpdateGroundItemMessageWriter(offset, id, amount, value);
+        chunkRepository.queueUpdate(new ChunkUpdatableRequest(this, msg, false));
+        amount = value;
     }
 
     /**

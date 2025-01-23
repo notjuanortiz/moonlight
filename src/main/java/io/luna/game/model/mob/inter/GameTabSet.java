@@ -1,6 +1,8 @@
 package io.luna.game.model.mob.inter;
 
+import com.google.common.collect.ImmutableMap;
 import io.luna.game.model.mob.Player;
+import io.luna.net.msg.out.ForceTabMessageWriter;
 import io.luna.net.msg.out.TabInterfaceMessageWriter;
 
 import java.util.EnumMap;
@@ -8,9 +10,9 @@ import java.util.Map;
 import java.util.OptionalInt;
 
 /**
- * A model representing a collection of sidebar tabs on the Player's game screen.
+ * A model representing a collection of sidebar tabs on a player's game screen.
  *
- * @author lare96 <http://github.com/lare96>
+ * @author lare96
  */
 public final class GameTabSet {
 
@@ -33,39 +35,53 @@ public final class GameTabSet {
         EMOTE(12, 147),
         MUSIC(13, 962);
 
+        public static final ImmutableMap<Integer, TabIndex> ID_MAP;
+
+        static {
+            ImmutableMap.Builder<Integer, TabIndex> builder = ImmutableMap.builder();
+            for (TabIndex tab : values()) {
+                builder.put(tab.index, tab);
+            }
+            ID_MAP = builder.build();
+        }
+
+        public static TabIndex forIndex(int index) {
+            return ID_MAP.get(index);
+        }
+
         /**
          * The index.
          */
-        private final int id;
-    
+        private final int index;
+
         /**
          * The default tab.
          */
-        private final int defaultTab;
+        private final int defaultTabId;
 
         /**
          * Creates a new {@link TabIndex}.
          *
-         * @param id The index.
-         * @param defaultTab The default tab.
+         * @param index The index.
+         * @param defaultTabId The default tab.
          */
-        TabIndex(int id, int defaultTab) {
-            this.id = id;
-            this.defaultTab = defaultTab;
+        TabIndex(int index, int defaultTabId) {
+            this.index = index;
+            this.defaultTabId = defaultTabId;
         }
 
         /**
          * @return The index.
          */
-        public final int getId() {
-            return id;
+        public final int getIndex() {
+            return index;
         }
-    
+
         /**
          * @return The default tab.
          */
-        public int getDefaultTab() {
-            return defaultTab;
+        public int getDefaultTabId() {
+            return defaultTabId;
         }
     }
 
@@ -130,6 +146,15 @@ public final class GameTabSet {
     }
 
     /**
+     * Forces the client to show tab {@code index}.
+     *
+     * @param index The tab to force.
+     */
+    public void show(TabIndex index) {
+        player.queue(new ForceTabMessageWriter(index));
+    }
+
+    /**
      * Clears the interfaces on all tabs.
      */
     public void clearAll() {
@@ -144,7 +169,7 @@ public final class GameTabSet {
      * @param index The tab to reset.
      */
     public void reset(TabIndex index) {
-        set(index, index.defaultTab);
+        set(index, index.defaultTabId);
     }
 
     /**

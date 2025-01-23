@@ -5,7 +5,7 @@ import java.util.function.Function;
 /**
  * A model that matches an event to an event listener. Implemented by Kotlin matchers.
  *
- * @author lare96 <http://github.com/lare96>
+ * @author lare96
  */
 public final class EventMatcher<E extends Event> {
 
@@ -39,7 +39,7 @@ public final class EventMatcher<E extends Event> {
      * @param msg The message to match.
      * @return {@code true} if the event was matched.
      */
-    public final boolean match(E msg) {
+    public boolean match(E msg) {
         return matchFunc.apply(msg);
     }
 }

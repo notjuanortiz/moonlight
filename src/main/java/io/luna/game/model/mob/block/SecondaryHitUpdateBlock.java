@@ -1,6 +1,5 @@
 package io.luna.game.model.mob.block;
 
-import io.luna.game.model.mob.Hit;
 import io.luna.game.model.mob.Npc;
 import io.luna.game.model.mob.Player;
 import io.luna.game.model.mob.block.UpdateFlagSet.UpdateFlag;
@@ -10,7 +9,7 @@ import io.luna.net.codec.ValueType;
 /**
  * An {@link UpdateBlock} implementation for the {@code SECONDARY_HIT} update block.
  *
- * @author lare96 <http://github.org/lare96>
+ * @author lare96
  */
 public final class SecondaryHitUpdateBlock extends UpdateBlock {
 
@@ -24,10 +23,10 @@ public final class SecondaryHitUpdateBlock extends UpdateBlock {
     @Override
     public void encodeForPlayer(Player player, ByteMessage msg) {
         Hit hit = unwrap(player.getSecondaryHit());
-        msg.put(hit.getDamage());
+        msg.put(hit.getDamage(), ValueType.ADD);
         msg.put(hit.getType().getOpcode(), ValueType.SUBTRACT);
-        msg.put(player.getHealth());
-        msg.put(player.getTotalHealth(), ValueType.NEGATE);
+        msg.put(player.getHealth(), ValueType.NEGATE);
+        msg.put(player.getTotalHealth());
     }
 
     @Override
@@ -41,11 +40,11 @@ public final class SecondaryHitUpdateBlock extends UpdateBlock {
 
     @Override
     public int getPlayerMask() {
-        return 512;
+        return 0x400;
     }
 
     @Override
     public int getNpcMask() {
-        return 8;
+        return 0x10;
     }
 }

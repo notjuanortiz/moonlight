@@ -12,7 +12,7 @@ import static java.util.Objects.requireNonNull;
  * A wrapper for a {@code HikariCP} SQL connection pool (represented by {@link HikariDataSource}). The JDBC url and the
  * login credentials are shared across all instances.
  *
- * @author lare96 <http://github.com/lare96>
+ * @author lare96 
  * @see <a href="https://github.com/brettwooldridge/HikariCP">HikariCP</a>
  */
 public final class SqlConnectionPool {
@@ -35,7 +35,7 @@ public final class SqlConnectionPool {
     /**
      * The database login password.
      */
-    private static final String PASSWORD = "H55yPGC9CkVcNwcqGJPT";
+    private static final String PASSWORD = "guMQRNYf44fxERs4uHxLCWjCQ";
 
     /**
      * A builder for this connection pool.
@@ -82,7 +82,7 @@ public final class SqlConnectionPool {
          */
         public SqlConnectionPool build() throws SQLException {
             HikariConfig config = new HikariConfig();
-            config.setJdbcUrl("jdbc:mysql://" + HOST + ":" + PORT + "/" + database + "");
+            config.setJdbcUrl("jdbc:mysql://" + HOST + ":" + PORT + "/" + database);
             config.setUsername(USERNAME);
             config.setPassword(PASSWORD);
             config.setPoolName(poolName);

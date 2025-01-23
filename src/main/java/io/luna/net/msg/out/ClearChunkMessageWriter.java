@@ -1,6 +1,7 @@
 package io.luna.net.msg.out;
 
 import io.luna.game.model.Position;
+import io.luna.game.model.chunk.ChunkRepository;
 import io.luna.game.model.mob.Player;
 import io.luna.net.codec.ByteMessage;
 import io.luna.net.codec.ValueType;
@@ -9,30 +10,36 @@ import io.luna.net.msg.GameMessageWriter;
 /**
  * A {@link GameMessageWriter} implementation that clears entities from a chunk.
  *
- * @author lare96 <http://github.org/lare96>
+ * @author lare96
  */
 public final class ClearChunkMessageWriter extends GameMessageWriter {
 
     /**
-     * The chunk position.
+     * The base position.
      */
-    private final Position chunkPosition;
+    private final Position basePosition;
 
     /**
-     * Creates a new {@link ClearChunkMessageWriter}.
-     *
-     * @param chunkPosition The chunk position.
+     * The placement position.
      */
-    public ClearChunkMessageWriter(Position chunkPosition) {
-        this.chunkPosition = chunkPosition;
+    private final Position placementPosition;
+
+    /**
+     * Creates a new {@link ChunkPlacementMessageWriter}.
+     *
+     * @param basePosition The base position.
+     * @param placementChunkRepository The placement chunk.
+     */
+    public ClearChunkMessageWriter(Position basePosition, ChunkRepository placementChunkRepository) {
+        this.basePosition = basePosition;
+        placementPosition = placementChunkRepository.getChunk().getAbsPosition();
     }
 
     @Override
     public ByteMessage write(Player player) {
-        ByteMessage msg = ByteMessage.message(64);
-        var plrRegion = player.getLastRegion();
-        msg.put(chunkPosition.getLocalX(plrRegion), ValueType.NEGATE);
-        msg.put(chunkPosition.getLocalY(plrRegion), ValueType.SUBTRACT);
+        ByteMessage msg = ByteMessage.message(40);
+        msg.put(placementPosition.getLocalY(basePosition), ValueType.SUBTRACT);
+        msg.put(placementPosition.getLocalX(basePosition), ValueType.NEGATE);
         return msg;
     }
 }

@@ -1,12 +1,14 @@
 /wip
-/data/saved_players
+/data/game/saved_players
+/data/game/saved_bots
 /.idea/
 /target/
 /.settings/
 /luna.iml
-/plugins/sandbox/
+/src/main/kotlin/sandbox/
 /bin/
 /out/
+/data/game/minigames/party_room/items.json
 
 ### Gradle ###
 .gradle
@@ -82,3 +84,5 @@ gradle-app.setting
 *.zip
 *.tar.gz
 *.rar
+/data/notes/
+/data/game/cache/

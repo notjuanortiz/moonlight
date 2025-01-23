@@ -6,8 +6,8 @@ import com.google.common.collect.Multiset;
 import com.google.common.collect.Sets;
 import io.luna.Luna;
 import io.luna.net.codec.ByteMessage;
-import io.luna.net.codec.login.LoginResponse;
-import io.luna.net.codec.login.LoginResponseMessage;
+import io.luna.net.msg.login.LoginResponse;
+import io.luna.net.msg.login.LoginResponseMessage;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -28,7 +28,7 @@ import java.util.Set;
  * <strong>One instance of this class must be shared across all pipelines in order to ensure that every
  * channel is using the same multiset.</strong>
  *
- * @author lare96 <http://github.org/lare96>
+ * @author lare96
  */
 @Sharable
 public final class LunaChannelFilter extends AbstractRemoteAddressFilter<InetSocketAddress> {
@@ -67,7 +67,7 @@ public final class LunaChannelFilter extends AbstractRemoteAddressFilter<InetSoc
             // Bypass filter for whitelisted addresses.
             return true;
         }
-        if (connections.count(address) >= Luna.settings().connectionLimit()) {
+        if (connections.count(address) >= Luna.settings().game().connectionLimit()) {
             // Reject if more than CONNECTION_LIMIT active connections.
             response(ctx, LoginResponse.LOGIN_LIMIT_EXCEEDED);
             return false;
@@ -134,6 +134,11 @@ public final class LunaChannelFilter extends AbstractRemoteAddressFilter<InetSoc
         channel.attr(LOGIN_RESPONSE_KEY).set(response);
     }
 
+    /**
+     * Adds an IP address to the blacklist.
+     *
+     * @param address The IP address.
+     */
     public void addToBlacklist(String address) {
         blacklist.add(address);
     }

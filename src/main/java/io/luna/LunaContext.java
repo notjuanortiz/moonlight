@@ -1,5 +1,6 @@
 package io.luna;
 
+import io.luna.game.cache.Cache;
 import io.luna.game.model.World;
 import io.luna.game.plugin.PluginManager;
 import io.luna.game.service.GameService;
@@ -7,9 +8,19 @@ import io.luna.game.service.GameService;
 /**
  * A model representing a single instance of Runescape. Only one instance should exist at a time.
  *
- * @author lare96 <http://github.org/lare96>
+ * @author lare96
  */
 public final class LunaContext {
+
+    /**
+     * The cache resource.
+     */
+    private final Cache cache = new Cache();
+
+    /**
+     * The server.
+     */
+    private final LunaServer server = new LunaServer(this);
 
     /**
      * The world.
@@ -33,6 +44,13 @@ public final class LunaContext {
     }
 
     /**
+     * @return The cache resource.
+     */
+    public Cache getCache() {
+        return cache;
+    }
+
+    /**
      * @return The world.
      */
     public World getWorld() {
@@ -51,5 +69,12 @@ public final class LunaContext {
      */
     public PluginManager getPlugins() {
         return plugins;
+    }
+
+    /**
+     * @return The server.
+     */
+    public LunaServer getServer() {
+        return server;
     }
 }

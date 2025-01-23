@@ -1,17 +1,24 @@
 package io.luna.game.service;
 
 import com.google.common.base.Stopwatch;
+import com.google.common.util.concurrent.Futures;
 import io.luna.game.model.EntityState;
 import io.luna.game.model.World;
 import io.luna.game.model.mob.Player;
 import io.luna.game.model.mob.persistence.PlayerData;
 import io.luna.game.service.LoginService.LoginRequest;
 import io.luna.net.client.LoginClient;
-import io.luna.net.codec.login.LoginRequestMessage;
-import io.luna.net.codec.login.LoginResponse;
+import io.luna.net.msg.login.LoginRequestMessage;
+import io.luna.net.msg.login.LoginResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
+
+import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import static io.luna.util.ThreadUtils.awaitTerminationUninterruptibly;
 import static org.apache.logging.log4j.util.Unbox.box;
@@ -19,7 +26,7 @@ import static org.apache.logging.log4j.util.Unbox.box;
 /**
  * A {@link AuthenticationService} implementation that handles login requests.
  *
- * @author lare96 <http://github.com/lare96>
+ * @author lare96
  */
 public final class LoginService extends AuthenticationService<LoginRequest> {
 
@@ -67,6 +74,8 @@ public final class LoginService extends AuthenticationService<LoginRequest> {
         }
     }
 
+    private final Map<String, Future<Boolean>> loadResultMap = new ConcurrentHashMap<>();
+
     /**
      * Creates a new {@link LoginService}.
      *
@@ -77,42 +86,32 @@ public final class LoginService extends AuthenticationService<LoginRequest> {
     }
 
     @Override
-    void addRequest(String username, LoginRequest request) {
-        if (!pending.containsKey(username)) {
-            logger.trace("Sending {}'s login request to a worker...", username);
-            workers.execute(() -> {
-                var client = request.client;
-                try {
-                    var player = request.player;
-                    var timer = Stopwatch.createStarted();
-                    var loadedData = PERSISTENCE.load(username);
-                    var response = client.getLoginResponse(loadedData, player.getPassword());
-                    if (response == LoginResponse.NORMAL) {
-                        if (pending.putIfAbsent(username, request) == null) {
-                            request.loadedData = loadedData;
-                            logger.debug("Finished loading {}'s data (took {}ms).", username, box(timer.elapsed().toMillis()));
-                        } else {
-                            client.disconnect();
-                        }
-                    } else {
-                        // Load wasn't successful, disconnect with login response.
-                        client.sendLoginResponse(player, response);
-                    }
-                } catch (Exception e) {
-                    logger.error(new ParameterizedMessage("Issue servicing {}'s login request!", username), e);
-                    client.disconnect();
-                }
-            });
-        }
-    }
-
-    @Override
-    boolean canFinishRequest(String username, LoginRequest request) {
+    boolean addRequest(String username, LoginRequest request) {
+        logger.trace("Sending {}'s login request to a worker...", username);
+        Callable<Boolean> loadTask = startWorker(username, request);
+        loadResultMap.putIfAbsent(username, workers.submit(loadTask));
         return true;
     }
 
     @Override
+    boolean canFinishRequest(String username, LoginRequest request) {
+        Future<Boolean> result = loadResultMap.get(username);
+        return result.isDone();
+    }
+
+    @Override
     void finishRequest(String username, LoginRequest request) {
+        try {
+            Future<Boolean> result = loadResultMap.remove(username);
+            if (!Futures.getDone(result)) {
+                // Load failed, don't send final login response.
+                return;
+            }
+        } catch (ExecutionException e) {
+            logger.error("Failed to get result from the login persistence worker.", e);
+            return; // Load failed for some other reason.
+        }
+
         logger.trace("Sending {}'s final login response.", username);
         var player = request.player;
         var client = request.client;
@@ -129,5 +128,41 @@ public final class LoginService extends AuthenticationService<LoginRequest> {
         workers.shutdownNow();
         awaitTerminationUninterruptibly(workers);
         logger.fatal("The login service has been shutdown.");
+    }
+
+    /**
+     * Starts a worker that will handle a load request and returns the future result of the task.
+     *
+     * @param username The username of the player being loaded.
+     * @param request The request to handle.
+     * @return The result of the load ({@code true} if the login response was normal).
+     */
+    private Callable<Boolean> startWorker(String username, LoginRequest request) {
+        return () -> {
+            var client = request.client;
+            try {
+                var player = request.player;
+                var timer = Stopwatch.createStarted();
+                var loadedData = world.getSerializerManager().getSerializer().load(world, username);
+                var response = client.getLoginResponse(loadedData, player.getPassword());
+                if (response == LoginResponse.NORMAL) {
+                    request.loadedData = loadedData;
+                    logger.debug("Finished loading {}'s data (took {}ms).", username, box(timer.elapsed().toMillis()));
+                    return true;
+                } else {
+                    // Load wasn't successful, disconnect with login response.
+                    client.sendLoginResponse(player, response);
+                    return false;
+                }
+            } catch (Exception e) {
+                logger.error(new ParameterizedMessage("Issue servicing {}'s login request!", username), e);
+                client.disconnect();
+            }
+            return false;
+        };
+    }
+
+    public boolean isLoadPending(String username) {
+        return loadResultMap.containsKey(username);
     }
 }

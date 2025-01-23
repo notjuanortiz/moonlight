@@ -4,11 +4,17 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.luna.LunaContext;
 import io.luna.game.model.chunk.ChunkManager;
+import io.luna.game.model.collision.CollisionManager;
 import io.luna.game.model.item.GroundItemList;
 import io.luna.game.model.item.shop.ShopManager;
+import io.luna.game.model.map.DynamicMapSpacePool;
 import io.luna.game.model.mob.MobList;
 import io.luna.game.model.mob.Npc;
 import io.luna.game.model.mob.Player;
+import io.luna.game.model.mob.bot.Bot;
+import io.luna.game.model.mob.bot.BotRepository;
+import io.luna.game.model.mob.controller.ControllerProcessTask;
+import io.luna.game.model.mob.persistence.PlayerSerializerManager;
 import io.luna.game.model.object.GameObjectList;
 import io.luna.game.service.GameService;
 import io.luna.game.service.LoginService;
@@ -19,11 +25,12 @@ import io.luna.game.task.TaskManager;
 import io.luna.net.msg.out.NpcUpdateMessageWriter;
 import io.luna.net.msg.out.PlayerUpdateMessageWriter;
 import io.luna.util.ThreadUtils;
+import io.luna.util.benchmark.BenchmarkManager;
+import io.luna.util.benchmark.BenchmarkType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -37,7 +44,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * A model that performs world processing and synchronization for mobs.
  *
- * @author lare96 <http://github.org/lare96>
+ * @author lare96
  */
 public final class World {
 
@@ -71,7 +78,7 @@ public final class World {
                     logger.warn(new ParameterizedMessage("{} could not complete synchronization.", player, e));
                     player.logout();
                 } finally {
-                    barrier.arriveAndDeregister();
+                    synchronizer.arriveAndDeregister();
                 }
             }
         }
@@ -93,9 +100,14 @@ public final class World {
     private final MobList<Player> playerList = new MobList<>(this, 2048);
 
     /**
-     * A list of active npc.
+     * A list of active npcs.
      */
     private final MobList<Npc> npcList = new MobList<>(this, 16384);
+
+    /**
+     * A list of active bots.
+     */
+    private final BotRepository botRepository = new BotRepository(this);
 
     /**
      * The login service.
@@ -113,9 +125,14 @@ public final class World {
     private final PersistenceService persistenceService = new PersistenceService(this);
 
     /**
+     * The serializer manager.
+     */
+    private final PlayerSerializerManager serializerManager = new PlayerSerializerManager(this);
+
+    /**
      * The chunk manager.
      */
-    private final ChunkManager chunks = new ChunkManager();
+    private final ChunkManager chunks = new ChunkManager(this);
 
     /**
      * The task manager.
@@ -138,19 +155,14 @@ public final class World {
     private final GroundItemList items = new GroundItemList(this);
 
     /**
-     * The area manager.
-     */
-    private final AreaManager areas = new AreaManager(this);
-
-    /**
      * A synchronization barrier.
      */
-    private final Phaser barrier = new Phaser(1);
+    private final Phaser synchronizer = new Phaser(1);
 
     /**
      * A thread pool for parallel updating.
      */
-    private final ExecutorService service;
+    private final ExecutorService updatePool;
 
     /**
      * The current tick.
@@ -163,9 +175,14 @@ public final class World {
     private final ConcurrentMap<String, Player> playerMap;
 
     /**
-     * An immutable view of {@link #playerMap}.
+     * The collision map.
      */
-    private final Map<String, Player> immutablePlayerMap;
+    private final CollisionManager collisionManager;
+
+    /**
+     * A repository for instances created using the construct map region packet.
+     */
+    private final DynamicMapSpacePool dynamicMapSpacePool;
 
     /**
      * Creates a new {@link World}.
@@ -174,19 +191,25 @@ public final class World {
      */
     public World(LunaContext context) {
         this.context = context;
-        this.playerMap = new ConcurrentHashMap<>();
-        this.immutablePlayerMap = Collections.unmodifiableMap(playerMap);
+
+        playerMap = new ConcurrentHashMap<>();
+        collisionManager = new CollisionManager(this);
+        dynamicMapSpacePool = new DynamicMapSpacePool(context);
 
         // Initialize synchronization thread pool.
         ThreadFactory tf = new ThreadFactoryBuilder().setNameFormat("WorldSynchronizationThread").build();
-        this.service = Executors.newFixedThreadPool(ThreadUtils.cpuCount(), tf);
+        updatePool = Executors.newFixedThreadPool(ThreadUtils.cpuCount(), tf);
     }
 
     /**
-     * Starts any miscellaneous world services. This function is applied on the game thread.
+     * Starts any miscellaneous world services. This method is executed on the game thread.
      */
     public void start() {
         items.startExpirationTask();
+        botRepository.load();
+        collisionManager.build(false);
+        schedule(new ControllerProcessTask(this));
+        dynamicMapSpacePool.buildEmptySpacePool();
     }
 
     /**
@@ -230,6 +253,7 @@ public final class World {
         preSynchronize();
         synchronize();
         postSynchronize();
+        chunks.resetUpdatedChunks();
 
         // Increment tick counter.
         currentTick.incrementAndGet();
@@ -247,10 +271,25 @@ public final class World {
                 }
                 player.getClient().handleDecodedMessages(player);
                 player.getWalking().process();
-                player.getClient().flush();
+                if (player.isBot()) {
+                    Bot bot = (Bot) player;
+                    bot.process();
+                }
             } catch (Exception e) {
                 player.logout();
                 logger.warn(new ParameterizedMessage("{} could not complete pre-synchronization.", player, e));
+            }
+        }
+
+        // Separate region update from other logic to ensure all chunk updates are sent.
+        for (Player player : playerList) {
+            try {
+                Position oldPosition = player.getPosition();
+                player.sendRegionUpdate(oldPosition);
+                player.getClient().flush();
+            } catch (Exception e) {
+                player.logout();
+                logger.warn(new ParameterizedMessage("Could not send region updates for {}.", player, e));
             }
         }
 
@@ -268,11 +307,15 @@ public final class World {
      * Synchronization part of the game loop, apply the update procedure in parallel.
      */
     private void synchronize() {
-        barrier.bulkRegister(playerList.size());
+        BenchmarkManager benchmarks = context.getServer().getBenchmarkManager();
+
+        benchmarks.startBenchmark(BenchmarkType.MOB_UPDATING);
+        synchronizer.bulkRegister(playerList.size());
         for (Player player : playerList) {
-            service.execute(new PlayerSynchronizationTask(player));
+            updatePool.execute(new PlayerSynchronizationTask(player));
         }
-        barrier.arriveAndAwaitAdvance();
+        synchronizer.arriveAndAwaitAdvance();
+        benchmarks.finishBenchmark(BenchmarkType.MOB_UPDATING);
     }
 
     /**
@@ -285,7 +328,7 @@ public final class World {
                 player.setCachedBlock(null);
             } catch (Exception e) {
                 player.logout();
-                logger.warn(player + " could not complete post-synchronization.", e);
+                logger.warn(new ParameterizedMessage("{} could not complete post-synchronization.", player), e);
             }
         }
 
@@ -294,7 +337,7 @@ public final class World {
                 npc.resetFlags();
             } catch (Exception e) {
                 npcList.remove(npc);
-                logger.warn(npc + " could not complete post-synchronization.", e);
+                logger.warn(new ParameterizedMessage("{} could not complete post-synchronization.", npc), e);
             }
         }
     }
@@ -378,10 +421,17 @@ public final class World {
     }
 
     /**
-     * @return A list of active npc.
+     * @return A list of active npcs.
      */
     public MobList<Npc> getNpcs() {
         return npcList;
+    }
+
+    /**
+     * @return A list of active bots.
+     */
+    public BotRepository getBots() {
+        return botRepository;
     }
 
     /**
@@ -396,13 +446,6 @@ public final class World {
      */
     public GroundItemList getItems() {
         return items;
-    }
-
-    /**
-     * @return The area manager.
-     */
-    public AreaManager getAreas() {
-        return areas;
     }
 
     /**
@@ -424,5 +467,26 @@ public final class World {
      */
     public Map<String, Player> getPlayerMap() {
         return playerMap;
+    }
+
+    /**
+     * @return The collision map.
+     */
+    public CollisionManager getCollisionManager() {
+        return collisionManager;
+    }
+
+    /**
+     * @return The serializer manager.
+     */
+    public PlayerSerializerManager getSerializerManager() {
+        return serializerManager;
+    }
+
+    /**
+     * @return A repository for instances created using the construct map region packet.
+     */
+    public DynamicMapSpacePool getDynamicMapSpacePool() {
+        return dynamicMapSpacePool;
     }
 }
